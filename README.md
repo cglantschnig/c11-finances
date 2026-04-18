@@ -17,6 +17,8 @@ To build this application for production:
 pnpm build
 ```
 
+TanStack Start is configured with Nitro so the server build can run on Vercel.
+
 ## Testing
 
 This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
@@ -43,6 +45,13 @@ If you prefer not to use Tailwind CSS:
 
 - Set the `VITE_CONVEX_URL` and `CONVEX_DEPLOYMENT` environment variables in your `.env.local`. (Or run `pnpm dlx convex init` to set them automatically.)
 - Run `pnpm dlx convex dev` to start the Convex server.
+
+## Deploying To Vercel
+
+- Import the repository into Vercel and let it use the Bun install/build defaults from `bun.lock`.
+- Set `VITE_CLERK_PUBLISHABLE_KEY` in Vercel. The root layout always mounts `ClerkProvider`, so requests will fail if it is missing.
+- Set `VITE_CONVEX_URL` in Vercel so the browser client can connect to Convex.
+- `CONVEX_DEPLOYMENT` is still useful for local Convex tooling, but the deployed frontend uses `VITE_CONVEX_URL`.
 
 
 
