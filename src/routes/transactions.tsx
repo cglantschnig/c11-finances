@@ -1,14 +1,42 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { cva } from 'class-variance-authority'
 import { useMutation, useQuery } from 'convex/react'
-import { History, Plus, Trash2 } from 'lucide-react'
+import {
+  IconArrowsSort,
+  IconHistory,
+  IconPlus,
+  IconReceipt2,
+  IconTrash,
+} from '@tabler/icons-react'
 import type { Doc, Id } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
 import AddTransactionDialog from '#/components/AddTransactionDialog'
 import PortfolioAppShell from '#/components/PortfolioAppShell'
 import PortfolioGate from '#/components/PortfolioGate'
 import { formatCurrency, formatQuantity } from '#/lib/format'
+import { cn } from '#/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '#/components/ui/alert-dialog'
+import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card'
+import { Skeleton } from '#/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -20,10 +48,49 @@ import {
 
 type Portfolio = Doc<'portfolios'>
 
+const sideBadgeVariants = cva(
+  'inline-flex items-center rounded-md border px-2 py-1 text-[0.7rem] font-medium uppercase tracking-[0.14em]',
+  {
+    variants: {
+      side: {
+        buy: 'border-primary/20 bg-primary/10 text-primary',
+        sell: 'border-destructive/20 bg-destructive/10 text-destructive',
+      },
+    },
+    defaultVariants: {
+      side: 'buy',
+    },
+  },
+)
+
 export const Route = createFileRoute('/transactions')({
   ssr: false,
   component: TransactionsRoute,
 })
+
+function SummaryCard({
+  description,
+  title,
+  value,
+}: {
+  description: string
+  title: string
+  value: React.ReactNode
+}) {
+  return (
+    <Card size="sm" className="shadow-sm">
+      <CardHeader>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          {title}
+        </p>
+        <CardTitle className="mt-2 text-2xl">{value}</CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm leading-6 text-muted-foreground">
+        {description}
+      </CardContent>
+    </Card>
+  )
+}
 
 function TransactionsRoute() {
   return (
@@ -42,6 +109,11 @@ function TransactionsScreen({ portfolio }: { portfolio: Portfolio }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+
+  const confirmingTransaction = useMemo(
+    () => transactions?.find((transaction) => transaction._id === confirmingId) ?? null,
+    [confirmingId, transactions],
+  )
 
   async function handleDelete(transactionId: Id<'transactions'>) {
     try {
@@ -69,188 +141,300 @@ function TransactionsScreen({ portfolio }: { portfolio: Portfolio }) {
         onOpenAddTransaction={() => setAddDialogOpen(true)}
         portfolio={portfolio}
       >
-        {transactions && transactions.length === 0 ? (
-          <section className="app-shell overflow-hidden rounded-[1.8rem]">
-            <div className="flex flex-col gap-8 px-6 py-7 md:px-8 md:py-9 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="eyebrow">Transactions</p>
-                <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-foreground md:text-5xl">
-                  No trades have been recorded yet.
-                </h1>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground md:text-base">
-                  Add your first buy or sell and the full ledger will appear here
-                  in reverse chronological order.
-                </p>
-              </div>
-
-              <Button
-                onClick={() => setAddDialogOpen(true)}
-                size="lg"
-                className="h-12 rounded-2xl px-5"
-              >
-                <Plus className="size-4" />
-                Add Transaction
-              </Button>
-            </div>
-
-            <div className="surface-line" />
-
-            <div className="px-6 py-12 md:px-8">
-              <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-                <div className="rounded-[1.5rem] border border-primary/20 bg-primary/10 p-4 text-primary">
-                  <History className="size-6" />
-                </div>
-                <h2 className="mt-5 text-2xl font-semibold text-foreground md:text-3xl">
-                  The ledger is empty.
-                </h2>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground md:text-base">
-                  This page will keep the raw history of every transaction,
-                  including pricing currency and FX conversion details.
-                </p>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section className="app-shell overflow-hidden rounded-[1.8rem]">
-            <div className="flex flex-col gap-6 px-6 py-7 md:px-8 md:py-8 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <Badge variant="outline" className="w-fit">
+              Ledger
+            </Badge>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="eyebrow">Ledger</p>
-                <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-foreground md:text-5xl">
+                <h2 className="font-heading text-3xl text-foreground sm:text-4xl">
                   Transactions
-                </h1>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  <span>{transactions?.length ?? 0} entries</span>
-                  <span>&middot;</span>
-                  <span>{portfolio.homeCurrency} home currency</span>
-                  <span>&middot;</span>
-                  <span>Reverse chronological</span>
-                </div>
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Review the raw chronological history for every buy and sell,
+                  including native pricing and FX conversion.
+                </p>
               </div>
-
-              <Button
-                onClick={() => setAddDialogOpen(true)}
-                size="lg"
-                className="h-12 rounded-2xl px-5"
-              >
-                <Plus className="size-4" />
-                Add Transaction
-              </Button>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span>{transactions?.length ?? 0} entries</span>
+                <span className="hidden sm:inline">&middot;</span>
+                <span>{portfolio.homeCurrency} reporting base</span>
+              </div>
             </div>
+          </div>
 
-            <div className="surface-line" />
-
-            {!transactions ? (
-              <div className="px-6 py-14 text-center text-sm text-muted-foreground md:px-8">
-                Loading transactions...
+          {transactions === undefined ? (
+            <>
+              <div className="grid gap-4 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index} size="sm" className="shadow-sm">
+                    <CardContent className="grid gap-3 pt-3">
+                      <Skeleton className="h-4 w-24 rounded-full" />
+                      <Skeleton className="h-8 w-32 rounded-full" />
+                      <Skeleton className="h-4 w-full rounded-full" />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ) : (
-              <div className="px-4 py-4 md:px-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead>Date</TableHead>
-                      <TableHead>Ticker</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                      <TableHead className="text-right">Currency</TableHead>
-                      <TableHead className="text-right">FX Rate</TableHead>
-                      <TableHead className="w-[104px] text-right">Delete</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((transaction) =>
-                      confirmingId === transaction._id ? (
-                        <TableRow key={transaction._id}>
-                          <TableCell colSpan={8} className="px-4 py-4">
-                            <div className="rounded-[1.4rem] border border-destructive/30 bg-destructive/8 px-4 py-4 md:flex md:items-center md:justify-between">
-                              <div className="space-y-1">
-                                <p className="font-medium text-foreground">
-                                  Delete this transaction?
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {transaction.date} · {transaction.ticker} ·{' '}
-                                  {formatQuantity(transaction.quantity)} units
-                                </p>
-                                {deleteError ? (
-                                  <p className="text-sm text-destructive">
-                                    {deleteError}
-                                  </p>
-                                ) : null}
-                              </div>
-                              <div className="mt-4 flex gap-2 md:mt-0">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => {
-                                    setConfirmingId(null)
-                                    setDeleteError(null)
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={() => handleDelete(transaction._id)}
-                                  disabled={pendingDeleteId === transaction._id}
-                                >
-                                  {pendingDeleteId === transaction._id
-                                    ? 'Deleting...'
-                                    : 'Confirm'}
-                                </Button>
-                              </div>
-                            </div>
-                          </TableCell>
+              <Card className="shadow-sm">
+                <CardHeader className="border-b">
+                  <CardTitle>Ledger</CardTitle>
+                  <CardDescription>Loading transactions...</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-6">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <Skeleton key={index} className="h-12 rounded-lg" />
+                  ))}
+                </CardContent>
+              </Card>
+            </>
+          ) : transactions.length === 0 ? (
+            <Card className="shadow-sm">
+              <CardContent className="py-12 text-center">
+                <div className="mx-auto flex size-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <IconHistory className="size-7" />
+                </div>
+                <h3 className="mt-5 font-heading text-2xl text-foreground sm:text-3xl">
+                  No trades have been recorded yet.
+                </h3>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Add your first buy or sell and the full ledger will appear
+                  here in reverse chronological order.
+                </p>
+                <Button onClick={() => setAddDialogOpen(true)} className="mt-6">
+                  <IconPlus className="size-4" />
+                  Add transaction
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <SummaryCard
+                  title="Entries"
+                  value={transactions.length}
+                  description="Every buy and sell is preserved in the raw ledger."
+                />
+                <SummaryCard
+                  title="Home currency"
+                  value={portfolio.homeCurrency}
+                  description="Dashboard totals and portfolio summaries normalize into this base."
+                />
+                <SummaryCard
+                  title="Order"
+                  value="Newest first"
+                  description="The ledger is rendered in reverse chronological order."
+                />
+              </div>
+
+              <Card className="shadow-sm">
+                <CardHeader className="border-b">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <IconArrowsSort className="size-4" />
+                    Reverse chronological
+                  </div>
+                  <CardTitle>Ledger</CardTitle>
+                  <CardDescription>
+                    Trade date, quantity, native pricing, and FX rate for each
+                    recorded transaction.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead>Date</TableHead>
+                          <TableHead>Ticker</TableHead>
+                          <TableHead>Side</TableHead>
+                          <TableHead className="text-right">Quantity</TableHead>
+                          <TableHead className="text-right">Price</TableHead>
+                          <TableHead className="text-right">Currency</TableHead>
+                          <TableHead className="text-right">FX rate</TableHead>
+                          <TableHead className="text-right">Delete</TableHead>
                         </TableRow>
-                      ) : (
-                        <TableRow key={transaction._id}>
-                          <TableCell className="tabular-nums text-muted-foreground">
-                            {transaction.date}
-                          </TableCell>
-                          <TableCell className="font-semibold text-foreground">
-                            {transaction.ticker}
-                          </TableCell>
-                          <TableCell className="uppercase text-muted-foreground">
-                            {transaction.side}
-                          </TableCell>
-                          <TableCell className="tabular-nums text-right text-foreground">
-                            {formatQuantity(transaction.quantity)}
-                          </TableCell>
-                          <TableCell className="tabular-nums text-right text-foreground">
-                            {formatCurrency(
-                              transaction.pricePerUnit,
-                              transaction.nativeCurrency,
-                            )}
-                          </TableCell>
-                          <TableCell className="tabular-nums text-right text-muted-foreground">
-                            {transaction.nativeCurrency}
-                          </TableCell>
-                          <TableCell className="tabular-nums text-right text-muted-foreground">
-                            {transaction.fxRate.toFixed(6)}
-                          </TableCell>
-                          <TableCell className="text-right">
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((transaction) => (
+                          <TableRow key={transaction._id}>
+                            <TableCell className="tabular-nums text-muted-foreground">
+                              {transaction.date}
+                            </TableCell>
+                            <TableCell className="font-medium text-foreground">
+                              {transaction.ticker}
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={sideBadgeVariants({
+                                  side: transaction.side,
+                                })}
+                              >
+                                {transaction.side}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatQuantity(transaction.quantity)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatCurrency(
+                                transaction.pricePerUnit,
+                                transaction.nativeCurrency,
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums text-muted-foreground">
+                              {transaction.nativeCurrency}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums text-muted-foreground">
+                              {transaction.fxRate.toFixed(6)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Delete ${transaction.ticker} transaction`}
+                                onClick={() => {
+                                  setDeleteError(null)
+                                  setConfirmingId(transaction._id)
+                                }}
+                                className="text-muted-foreground hover:text-destructive"
+                              >
+                                <IconTrash className="size-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="grid gap-3 md:hidden">
+                    {transactions.map((transaction) => (
+                      <Card key={transaction._id} size="sm">
+                        <CardContent className="grid gap-4 pt-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-lg font-medium text-foreground">
+                                {transaction.ticker}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {transaction.date}
+                              </p>
+                            </div>
+                            <span
+                              className={sideBadgeVariants({
+                                side: transaction.side,
+                              })}
+                            >
+                              {transaction.side}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                Quantity
+                              </p>
+                              <p className="mt-1 tabular-nums text-foreground">
+                                {formatQuantity(transaction.quantity)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                Price
+                              </p>
+                              <p className="mt-1 tabular-nums text-foreground">
+                                {formatCurrency(
+                                  transaction.pricePerUnit,
+                                  transaction.nativeCurrency,
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                Currency
+                              </p>
+                              <p className="mt-1 tabular-nums text-foreground">
+                                {transaction.nativeCurrency}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                FX rate
+                              </p>
+                              <p className="mt-1 tabular-nums text-foreground">
+                                {transaction.fxRate.toFixed(6)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end">
                             <Button
                               variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Delete ${transaction.ticker} transaction`}
+                              size="sm"
                               onClick={() => {
                                 setDeleteError(null)
                                 setConfirmingId(transaction._id)
                               }}
-                              className="rounded-xl text-muted-foreground hover:text-destructive"
+                              className="text-muted-foreground hover:text-destructive"
                             >
-                              <Trash2 className="size-4" />
+                              <IconTrash className="size-4" />
+                              Delete
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ),
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </section>
-        )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
       </PortfolioAppShell>
+
+      <AlertDialog
+        open={confirmingId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmingId(null)
+            setDeleteError(null)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <IconTrash className="size-5" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmingTransaction
+                ? `${confirmingTransaction.date} • ${confirmingTransaction.ticker} • ${formatQuantity(
+                    confirmingTransaction.quantity,
+                  )} units`
+                : 'This action removes the selected ledger entry.'}
+            </AlertDialogDescription>
+            {deleteError ? (
+              <p className="text-sm text-destructive">{deleteError}</p>
+            ) : null}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={pendingDeleteId === confirmingId || !confirmingId}
+              onClick={() => {
+                if (confirmingId) {
+                  void handleDelete(confirmingId as Id<'transactions'>)
+                }
+              }}
+            >
+              {pendingDeleteId === confirmingId ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AddTransactionDialog
         open={addDialogOpen}

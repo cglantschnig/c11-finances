@@ -1,4 +1,9 @@
-import { AlertTriangle, CircleOff } from 'lucide-react'
+import {
+  IconAlertTriangle,
+  IconCircleOff,
+  IconSettingsBolt,
+} from '@tabler/icons-react'
+import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 
 type SetupStateProps = {
   description: string
@@ -12,42 +17,40 @@ export default function SetupState({
   title,
 }: SetupStateProps) {
   return (
-    <main className="page-wrap px-1 py-3 md:px-0 md:py-4">
-      <section className="workspace-frame flex min-h-[calc(100svh-1.5rem)] items-center justify-center rounded-[2rem] px-4 py-10 md:rounded-[2.15rem] md:px-8">
-        <div className="app-shell grid w-full max-w-3xl gap-6 rounded-[1.8rem] p-8 md:p-10">
-          <div className="flex items-start gap-4">
-            <div className="rounded-[1.1rem] border border-[hsl(var(--warning)/0.24)] bg-[hsl(var(--warning)/0.12)] p-3 text-[hsl(var(--warning))]">
-              <AlertTriangle className="size-6" />
-            </div>
-            <div className="space-y-2">
-              <p className="eyebrow">Configuration Required</p>
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-foreground md:text-4xl">
-                {title}
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-                {description}
-              </p>
-            </div>
+    <main className="flex min-h-svh items-center justify-center bg-muted/25 px-4 py-10">
+      <Card className="w-full max-w-3xl shadow-sm">
+        <CardHeader className="gap-4 border-b">
+          <div className="flex size-12 items-center justify-center rounded-lg bg-warning/15 text-warning">
+            <IconAlertTriangle className="size-6" />
           </div>
-
-          <div className="panel-muted rounded-[1.45rem] p-5">
-            <div className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
-              <CircleOff className="size-4 text-[hsl(var(--warning))]" />
-              Missing environment variables
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <IconSettingsBolt className="size-3.5" />
+              Configuration required
             </div>
-            <div className="flex flex-wrap gap-2">
-              {missing.map((item) => (
-                <code
-                  key={item}
-                  className="rounded-full border border-border bg-background/20 px-3 py-1.5 text-xs text-muted-foreground"
-                >
-                  {item}
-                </code>
-              ))}
-            </div>
+            <CardTitle className="text-2xl sm:text-3xl">{title}</CardTitle>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
           </div>
-        </div>
-      </section>
+        </CardHeader>
+        <CardContent className="grid gap-4 pt-6">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <IconCircleOff className="size-4 text-warning" />
+            Missing environment variables
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {missing.map((item) => (
+              <code
+                key={item}
+                className="rounded-md border bg-muted px-3 py-1.5 text-xs text-muted-foreground"
+              >
+                {item}
+              </code>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </main>
   )
 }

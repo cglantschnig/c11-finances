@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { useMutation } from 'convex/react'
+import { toast } from 'sonner'
+import {
+  IconArrowsExchange,
+  IconCalendar,
+  IconCoin,
+  IconReceipt2,
+} from '@tabler/icons-react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
 import { COMMON_CURRENCIES, fetchHistoricalFxRate } from '#/lib/fx'
@@ -22,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { Separator } from '#/components/ui/separator'
 
 function createInitialState(homeCurrency: string) {
   const isCommon = COMMON_CURRENCIES.includes(
@@ -49,14 +56,21 @@ type AddTransactionDialogProps = {
 
 function Field({
   children,
+  hint,
   label,
 }: {
   children: React.ReactNode
+  hint?: string
   label: string
 }) {
   return (
     <label className="grid gap-2">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        {hint ? (
+          <span className="text-xs text-muted-foreground">{hint}</span>
+        ) : null}
+      </div>
       {children}
     </label>
   )
@@ -185,189 +199,250 @@ export default function AddTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl overflow-hidden rounded-[1.9rem] border border-border bg-[linear-gradient(180deg,hsl(var(--surface-strong)),hsl(var(--surface)))] p-0">
+      <DialogContent className="max-w-4xl gap-0 overflow-hidden p-0 sm:max-w-4xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader className="border-b border-border px-6 pt-6 pb-5 md:px-8 md:pt-8">
-            <p className="eyebrow">Portfolio</p>
-            <DialogTitle className="text-2xl text-foreground md:text-3xl">
-              Add transaction
-            </DialogTitle>
-            <DialogDescription className="leading-7">
-              Record a buy or sell. Include any fees directly in the unit price.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 px-6 py-6 md:grid-cols-2 md:px-8">
-            <Field label="Ticker">
-              <Input
-                value={form.ticker}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    ticker: event.target.value.toUpperCase(),
-                  }))
-                }
-                placeholder="AAPL"
-                className="h-11 uppercase"
-              />
-            </Field>
-
-            <Field label="Date">
-              <Input
-                type="date"
-                value={form.date}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    date: event.target.value,
-                  }))
-                }
-                className="h-11"
-              />
-            </Field>
-
-            <Field label="Asset type">
-              <Select
-                value={form.assetType}
-                onValueChange={(value: 'equity' | 'crypto') =>
-                  setForm((current) => ({ ...current, assetType: value }))
-                }
-              >
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="equity">Equity</SelectItem>
-                  <SelectItem value="crypto">Crypto</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Side">
-              <Select
-                value={form.side}
-                onValueChange={(value: 'buy' | 'sell') =>
-                  setForm((current) => ({ ...current, side: value }))
-                }
-              >
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="buy">Buy</SelectItem>
-                  <SelectItem value="sell">Sell</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Quantity">
-              <Input
-                inputMode="decimal"
-                value={form.quantity}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    quantity: event.target.value,
-                  }))
-                }
-                placeholder="10"
-                className="h-11"
-              />
-            </Field>
-
-            <Field label="Price per unit">
-              <Input
-                inputMode="decimal"
-                value={form.pricePerUnit}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    pricePerUnit: event.target.value,
-                  }))
-                }
-                placeholder="183.40"
-                className="h-11"
-              />
-            </Field>
-
-            <Field label="Native currency">
-              <Select
-                value={form.nativeCurrency}
-                onValueChange={(value) =>
-                  setForm((current) => ({
-                    ...current,
-                    nativeCurrency: value,
-                  }))
-                }
-              >
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMMON_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="OTHER">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <div className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Home currency</span>
-              <div className="flex h-11 items-center rounded-xl border border-border bg-muted/24 px-3.5 text-sm text-foreground">
-                {portfolio.homeCurrency}
+          <DialogHeader className="px-6 pt-6 pb-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-3">
+                <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <IconReceipt2 className="size-5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl sm:text-3xl">
+                    Add transaction
+                  </DialogTitle>
+                  <DialogDescription className="mt-2 max-w-2xl leading-6">
+                    Record a buy or sell. Include any fees directly in the unit
+                    price so cost basis stays accurate.
+                  </DialogDescription>
+                </div>
+              </div>
+              <div className="rounded-lg border bg-muted/35 px-4 py-3 text-sm">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  Home currency
+                </p>
+                <p className="mt-1 font-medium text-foreground">
+                  {portfolio.homeCurrency}
+                </p>
               </div>
             </div>
+          </DialogHeader>
 
-            {form.nativeCurrency === 'OTHER' ? (
-              <Field label="ISO 4217 currency code">
+          <Separator />
+
+          <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Ticker">
                 <Input
-                  maxLength={3}
-                  value={form.nativeCurrencyOther}
+                  value={form.ticker}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      nativeCurrencyOther: event.target.value.toUpperCase(),
+                      ticker: event.target.value.toUpperCase(),
                     }))
                   }
-                  placeholder="CHF"
-                  className="h-11 uppercase"
+                  placeholder="AAPL"
+                  className="h-10 uppercase"
                 />
               </Field>
-            ) : null}
 
-            {showFxField ? (
-              <label className="grid gap-2 md:col-span-2">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-muted-foreground">FX rate</span>
-                  <span className="text-xs text-muted-foreground">
-                    {isFetchingFx
-                      ? 'Fetching rate...'
-                      : `${resolvedNativeCurrency} → ${portfolio.homeCurrency}`}
-                  </span>
-                </div>
+              <Field label="Date">
                 <Input
-                  inputMode="decimal"
-                  value={form.fxRate}
+                  type="date"
+                  value={form.date}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      fxRate: event.target.value,
+                      date: event.target.value,
                     }))
                   }
-                  className="h-11"
+                  className="h-10"
                 />
-              </label>
-            ) : null}
+              </Field>
+
+              <Field label="Asset type">
+                <Select
+                  value={form.assetType}
+                  onValueChange={(value: 'equity' | 'crypto') =>
+                    setForm((current) => ({ ...current, assetType: value }))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="equity">Equity</SelectItem>
+                    <SelectItem value="crypto">Crypto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Side">
+                <Select
+                  value={form.side}
+                  onValueChange={(value: 'buy' | 'sell') =>
+                    setForm((current) => ({ ...current, side: value }))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="buy">Buy</SelectItem>
+                    <SelectItem value="sell">Sell</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Quantity">
+                <Input
+                  inputMode="decimal"
+                  value={form.quantity}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      quantity: event.target.value,
+                    }))
+                  }
+                  placeholder="10"
+                  className="h-10"
+                />
+              </Field>
+
+              <Field label="Price per unit">
+                <Input
+                  inputMode="decimal"
+                  value={form.pricePerUnit}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      pricePerUnit: event.target.value,
+                    }))
+                  }
+                  placeholder="183.40"
+                  className="h-10"
+                />
+              </Field>
+
+              <Field label="Native currency">
+                <Select
+                  value={form.nativeCurrency}
+                  onValueChange={(value) =>
+                    setForm((current) => ({
+                      ...current,
+                      nativeCurrency: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMMON_CURRENCIES.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Reporting currency">
+                <div className="flex h-10 items-center rounded-lg border bg-muted/35 px-3 text-sm text-foreground">
+                  {portfolio.homeCurrency}
+                </div>
+              </Field>
+
+              {form.nativeCurrency === 'OTHER' ? (
+                <Field label="ISO 4217 code">
+                  <Input
+                    maxLength={3}
+                    value={form.nativeCurrencyOther}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        nativeCurrencyOther: event.target.value.toUpperCase(),
+                      }))
+                    }
+                    placeholder="CHF"
+                    className="h-10 uppercase"
+                  />
+                </Field>
+              ) : null}
+
+              {showFxField ? (
+                <Field
+                  label="FX rate"
+                  hint={
+                    isFetchingFx
+                      ? 'Fetching rate...'
+                      : `${resolvedNativeCurrency} → ${portfolio.homeCurrency}`
+                  }
+                >
+                  <Input
+                    inputMode="decimal"
+                    value={form.fxRate}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        fxRate: event.target.value,
+                      }))
+                    }
+                    className="h-10"
+                  />
+                </Field>
+              ) : null}
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/35 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <IconCoin className="size-4 text-primary" />
+                  Transaction notes
+                </div>
+                <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
+                  <li>Use the trade date that should drive the FX lookup.</li>
+                  <li>
+                    Enter fees directly into the unit price if you want them
+                    reflected in average cost.
+                  </li>
+                  <li>
+                    Tickers are stored uppercase to keep holdings grouped
+                    cleanly.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border bg-muted/35 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <IconCalendar className="size-4 text-primary" />
+                  Pricing flow
+                </div>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  When the native currency differs from{' '}
+                  {portfolio.homeCurrency}, the dialog fetches a historical FX
+                  rate automatically and lets you override it if needed.
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-muted/35 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <IconArrowsExchange className="size-4 text-primary" />
+                  Current pair
+                </div>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  {resolvedNativeCurrency || '---'} → {portfolio.homeCurrency}
+                </p>
+              </div>
+            </div>
           </div>
 
           {error ? (
-            <p className="px-6 pb-2 text-sm text-destructive md:px-8">{error}</p>
+            <p className="px-6 pb-2 text-sm text-destructive">{error}</p>
           ) : null}
 
-          <DialogFooter className="rounded-b-[1.9rem] border-border bg-muted/18 px-6 py-4 md:px-8">
+          <DialogFooter className="px-6">
             <Button
               type="button"
               variant="outline"

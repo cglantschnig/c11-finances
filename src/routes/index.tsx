@@ -1,8 +1,25 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
-import { ArrowRight, ChartColumnIncreasing, ShieldCheck } from 'lucide-react'
-import { Button } from '#/components/ui/button'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  IconArrowRight,
+  IconChartHistogram,
+  IconCoins,
+  IconRefresh,
+  IconShieldLock,
+  IconReceipt2,
+} from '@tabler/icons-react'
+import ModeToggle from '#/components/mode-toggle'
 import { hasClerkPublishableKey } from '#/integrations/clerk/config'
+import { Badge } from '#/components/ui/badge'
+import { Button } from '#/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card'
+import { Separator } from '#/components/ui/separator'
 
 export const Route = createFileRoute('/')({
   ssr: false,
@@ -12,44 +29,68 @@ export const Route = createFileRoute('/')({
 function HomePage() {
   const signedOutPrimaryAction = hasClerkPublishableKey ? (
     <SignInButton mode="modal">
-      <Button size="lg" className="h-12 rounded-2xl px-5">
-        <ShieldCheck className="size-4" />
+      <Button>
+        <IconShieldLock className="size-4" />
         Sign in to begin
       </Button>
     </SignInButton>
   ) : (
-    <Button asChild variant="outline" size="lg" className="h-12 rounded-2xl px-5">
+    <Button asChild variant="outline">
       <Link to="/dashboard">Open setup state</Link>
     </Button>
   )
 
   return (
-    <main className="page-wrap px-1 py-3 md:px-0 md:py-4">
-      <section className="workspace-frame overflow-hidden rounded-[2rem] md:rounded-[2.15rem]">
-        <div className="grid min-h-[calc(100svh-1.5rem)] md:grid-cols-[320px_minmax(0,1fr)]">
-          <div className="border-b border-border px-6 py-8 md:border-b-0 md:border-r md:px-8 md:py-10">
-            <div className="brand-wordmark text-[2rem] leading-none">
-              f11 <span>finances</span>
+    <main className="min-h-svh bg-background">
+      <div className="mx-auto flex min-h-svh max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+        <header className="flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-3 no-underline">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <IconChartHistogram className="size-5" />
             </div>
-            <div className="mt-10 space-y-3">
-              <p className="eyebrow">Portfolio Tracker</p>
-              <h1 className="text-4xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
-                A focused workspace for holdings, prices, and raw trade history.
+            <div>
+              <p className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                F11
+              </p>
+              <p className="font-heading text-lg text-foreground">Finances</p>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <SignedIn>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/dashboard">Workspace</Link>
+              </Button>
+            </SignedIn>
+            <ModeToggle />
+          </div>
+        </header>
+
+        <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <div className="space-y-6">
+            <Badge variant="outline" className="w-fit">
+              Portfolio tracker
+            </Badge>
+
+            <div className="space-y-4">
+              <h1 className="max-w-3xl font-heading text-4xl leading-tight text-foreground sm:text-5xl lg:text-6xl">
+                A clean workspace for holdings, market value, and raw trade
+                history.
               </h1>
-              <p className="text-sm leading-7 text-muted-foreground md:text-base">
-                Record transactions, convert everything into a home currency, and
-                monitor open positions in a single data-first interface.
+              <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+                Record transactions, normalize everything into a home currency,
+                and monitor open positions without losing the underlying ledger.
               </p>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {hasClerkPublishableKey ? (
                 <>
                   <SignedIn>
-                    <Button asChild size="lg" className="h-12 rounded-2xl px-5">
+                    <Button asChild>
                       <Link to="/dashboard">
                         Open portfolio
-                        <ArrowRight className="size-4" />
+                        <IconArrowRight className="size-4" />
                       </Link>
                     </Button>
                   </SignedIn>
@@ -58,52 +99,93 @@ function HomePage() {
               ) : (
                 signedOutPrimaryAction
               )}
+              <Button asChild variant="outline">
+                <Link to="/transactions">View ledger</Link>
+              </Button>
             </div>
-          </div>
 
-          <div className="p-6 md:p-8 md:pt-10">
-            <div className="app-shell overflow-hidden rounded-[1.8rem]">
-              <div className="flex items-center justify-between border-b border-border px-6 py-6">
-                <div>
-                  <p className="eyebrow">Preview</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-foreground">
-                    Product direction
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  icon: IconCoins,
+                  title: 'Home-currency reporting',
+                  description: 'One base currency across every view.',
+                },
+                {
+                  icon: IconRefresh,
+                  title: 'Cached price refresh',
+                  description: 'Surface stale values without hiding them.',
+                },
+                {
+                  icon: IconReceipt2,
+                  title: 'FX-aware ledger',
+                  description: 'Keep the raw transaction history intact.',
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-lg border bg-muted/35 p-4"
+                >
+                  <item.icon className="size-5 text-primary" />
+                  <h2 className="mt-3 text-sm font-medium text-foreground">
+                    {item.title}
                   </h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {item.description}
+                  </p>
                 </div>
-                <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-primary">
-                  <ChartColumnIncreasing className="size-5" />
-                </div>
-              </div>
-
-              <div className="grid gap-4 p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-                <div className="panel-muted rounded-[1.45rem] p-5">
-                  <p className="eyebrow">What it handles</p>
-                  <div className="mt-4 grid gap-3">
-                    <div className="rounded-[1.1rem] border border-border/80 bg-background/20 px-4 py-4 text-sm text-muted-foreground">
-                      Holdings valued in your portfolio home currency.
-                    </div>
-                    <div className="rounded-[1.1rem] border border-border/80 bg-background/20 px-4 py-4 text-sm text-muted-foreground">
-                      Cached and refreshed prices with stale indicators.
-                    </div>
-                    <div className="rounded-[1.1rem] border border-border/80 bg-background/20 px-4 py-4 text-sm text-muted-foreground">
-                      A transaction ledger with FX-aware historical entries.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="panel-muted rounded-[1.45rem] p-5">
-                  <p className="eyebrow">Current Scope</p>
-                  <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
-                    <p>Dashboard for open positions and unrealized performance.</p>
-                    <p>Transactions page for raw chronological trade records.</p>
-                    <p>First-run setup flow for auth and home-currency creation.</p>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+
+          <Card className="shadow-sm">
+            <CardHeader className="border-b">
+              <Badge variant="outline" className="w-fit">
+                Inside the workspace
+              </Badge>
+              <CardTitle className="text-2xl">Built for a focused flow</CardTitle>
+              <CardDescription className="leading-6">
+                The app keeps setup, dashboard, and transactions aligned around
+                the same reporting model.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-5 pt-6">
+              {[
+                {
+                  title: 'Dashboard',
+                  description:
+                    'Open positions, current value, and unrealized performance in one view.',
+                },
+                {
+                  title: 'Transactions',
+                  description:
+                    'A chronological ledger with quantity, pricing currency, and FX rate.',
+                },
+                {
+                  title: 'Setup',
+                  description:
+                    'Authentication and home-currency creation before the main workspace.',
+                },
+              ].map((item, index) => (
+                <div key={item.title}>
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-sm font-medium text-primary">
+                      0{index + 1}
+                    </div>
+                    <div>
+                      <h2 className="font-medium text-foreground">{item.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                  {index < 2 ? <Separator className="mt-5" /> : null}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+      </div>
     </main>
   )
 }
