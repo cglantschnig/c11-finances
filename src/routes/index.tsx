@@ -25,6 +25,7 @@ const LANDING_THEME = {
     backgroundImage:
       'radial-gradient(circle at top left, rgba(76, 201, 240, 0.16), transparent 34%), radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 28%)',
     foreground: '#fff',
+    headerBackground: 'transparent',
     gridLine: 'rgba(255,255,255,0.04)',
     border: 'rgba(255,255,255,0.1)',
     borderSoft: 'rgba(255,255,255,0.08)',
@@ -43,6 +44,7 @@ const LANDING_THEME = {
     backgroundImage:
       'radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 34%), radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%)',
     foreground: 'oklch(0.19 0.014 236)',
+    headerBackground: 'rgba(255,255,255,0.96)',
     gridLine: 'rgba(15,23,42,0.04)',
     border: 'rgba(15,23,42,0.12)',
     borderSoft: 'rgba(15,23,42,0.08)',
@@ -98,71 +100,78 @@ function HomePage() {
 
       <div className="relative z-10 mx-auto flex min-h-svh max-w-[1280px] flex-col px-12">
         {/* Nav */}
-        <nav className="flex items-center justify-between py-[22px]">
-          <Link to="/" className="flex items-center gap-3 no-underline">
-            <Logo className="size-[38px]" />
-            <div>
-              <p
-                className="text-[9px] font-semibold uppercase"
-                style={{ letterSpacing: '0.22em', color: palette.mutedStrong }}
-              >
-                F11
-              </p>
-              <p
-                className="text-base font-semibold leading-none"
-                style={{ color: palette.foreground }}
-              >
-                Finances
-              </p>
-            </div>
-          </Link>
+        <nav
+          className="relative left-1/2 right-1/2 -mx-[50vw] w-screen"
+          style={{ backgroundColor: palette.headerBackground }}
+        >
+          <div className="mx-auto flex max-w-[1280px] items-center justify-between px-12 py-[22px]">
+            <Link to="/" className="flex items-center gap-3 no-underline">
+              <Logo className="size-[38px]" />
+              <div>
+                <p
+                  className="text-[9px] font-semibold uppercase"
+                  style={{ letterSpacing: '0.22em', color: palette.mutedStrong }}
+                >
+                  F11
+                </p>
+                <p
+                  className="text-base font-semibold leading-none"
+                  style={{ color: palette.foreground }}
+                >
+                  Finances
+                </p>
+              </div>
+            </Link>
 
-          <div className="flex items-center gap-2">
-            <SignedIn>
-              <Link
-                to="/dashboard"
-                className="text-[13px] font-medium transition-colors"
-                style={{
-                  border: `1px solid ${palette.border}`,
-                  padding: '7px 18px',
-                  background: 'none',
-                  color: palette.foreground,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = palette.surfaceAlt)
-                }
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+            <div className="flex items-center gap-2">
+              <SignedIn>
+                <Link
+                  to="/dashboard"
+                  className="text-[13px] font-medium transition-colors"
+                  style={{
+                    border: `1px solid ${palette.border}`,
+                    padding: '7px 18px',
+                    background: 'none',
+                    color: palette.foreground,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = palette.surfaceAlt)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = 'none')
+                  }
+                >
+                  Workspace
+                </Link>
+              </SignedIn>
+              <SignedOut>
+                {hasClerkPublishableKey && (
+                  <SignInButton mode="modal">
+                    <NavGhostButton
+                      borderColor={palette.border}
+                      foreground={palette.foreground}
+                      hoverBackground={palette.surfaceAlt}
+                    >
+                      Sign in
+                    </NavGhostButton>
+                  </SignInButton>
+                )}
+              </SignedOut>
+              <NavGhostButton
+                className="w-[35px] px-0"
+                borderColor={palette.border}
+                foreground={palette.foreground}
+                hoverBackground={palette.surfaceAlt}
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
               >
-                Workspace
-              </Link>
-            </SignedIn>
-            <SignedOut>
-              {hasClerkPublishableKey && (
-                <SignInButton mode="modal">
-                  <NavGhostButton
-                    borderColor={palette.border}
-                    foreground={palette.foreground}
-                    hoverBackground={palette.surfaceAlt}
-                  >
-                    Sign in
-                  </NavGhostButton>
-                </SignInButton>
-              )}
-            </SignedOut>
-            <NavGhostButton
-              className="w-[35px] px-0"
-              borderColor={palette.border}
-              foreground={palette.foreground}
-              hoverBackground={palette.surfaceAlt}
-              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            >
-              {isDark ? (
-                <IconMoon className="size-4" />
-              ) : (
-                <IconSun className="size-4" />
-              )}
-            </NavGhostButton>
+                {isDark ? (
+                  <IconMoon className="size-4" />
+                ) : (
+                  <IconSun className="size-4" />
+                )}
+              </NavGhostButton>
+            </div>
           </div>
         </nav>
 
@@ -324,6 +333,15 @@ function HomePage() {
             </table>
           </div>
         </section>
+
+        <footer className="pb-6 pt-2 text-center">
+          <p
+            className="text-[11px]"
+            style={{ letterSpacing: '0.08em', color: palette.mutedSoft }}
+          >
+            Copyright by Christopher Glantschnig
+          </p>
+        </footer>
       </div>
     </div>
   )
