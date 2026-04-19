@@ -1,3 +1,4 @@
+import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { IconArrowRight } from '@tabler/icons-react'
@@ -241,9 +242,15 @@ function HomePage() {
   )
 }
 
-function NavGhostButton({ children }: { children: React.ReactNode }) {
+function NavGhostButton({
+  children,
+  type = 'button',
+  ...props
+}: ComponentPropsWithoutRef<'button'> & { children: ReactNode }) {
   return (
     <button
+      {...props}
+      type={type}
       className="cursor-pointer text-[13px] font-medium text-white transition-colors hover:bg-white/[0.07]"
       style={{
         background: 'none',
@@ -257,9 +264,14 @@ function NavGhostButton({ children }: { children: React.ReactNode }) {
   )
 }
 
-function TealCtaButton() {
+function TealCtaButton({
+  type = 'button',
+  ...props
+}: ComponentPropsWithoutRef<'button'>) {
   return (
     <button
+      {...props}
+      type={type}
       className="inline-flex cursor-pointer items-center gap-2.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-85 active:scale-[0.98]"
       style={{
         background: 'oklch(0.64 0.156 149.56)',
