@@ -141,6 +141,7 @@ export const setUserCurrency = mutation({
 
 export const addTransaction = mutation({
   args: {
+    assetName: v.optional(v.string()),
     assetType: v.union(v.literal('equity'), v.literal('crypto')),
     date: v.string(),
     fxRate: v.number(),
@@ -154,6 +155,7 @@ export const addTransaction = mutation({
   handler: async (ctx, args) => {
     const tokenIdentifier = await requireViewerTokenIdentifier(ctx)
     const portfolio = await getOwnedPortfolio(ctx, args.portfolioId, tokenIdentifier)
+    const assetName = args.assetName?.trim()
     const ticker = normalizeTicker(args.ticker)
     const nativeCurrency = normalizeCurrency(args.nativeCurrency)
     const fxRate =
@@ -204,6 +206,7 @@ export const addTransaction = mutation({
     }
 
     return await ctx.db.insert('transactions', {
+      ...(assetName ? { assetName } : {}),
       assetType: args.assetType,
       date: args.date,
       fxRate,

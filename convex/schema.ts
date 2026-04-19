@@ -15,6 +15,7 @@ export default defineSchema({
     ticker: v.string(),
   }).index('by_key', ['key']),
   transactions: defineTable({
+    assetName: v.optional(v.string()),
     assetType: v.union(v.literal('equity'), v.literal('crypto')),
     date: v.string(),
     fxRate: v.number(),

@@ -382,7 +382,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                           <TableHead>Asset</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
                           <TableHead className="text-right">Average price</TableHead>
-                          <TableHead className="text-right">Current price</TableHead>
+                          <TableHead className="text-right">Current value</TableHead>
                           <TableHead className="text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -458,7 +458,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Current price</p>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Current value</p>
                                 <div className="mt-1 flex items-center gap-2">
                                   <p className="tabular-nums font-medium text-foreground">
                                     {holding.value === null

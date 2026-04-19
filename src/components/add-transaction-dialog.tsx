@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { IconX } from '@tabler/icons-react'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
@@ -9,7 +9,13 @@ import {
   isUserCurrency,
   userCurrencyOptions,
 } from '#/config/currencies'
+import {
+  findAssetAutocompleteOption,
+  getAssetAutocompleteOptions,
+  type AssetAutocompleteOption,
+} from '#/lib/asset-autocomplete'
 import { todayIsoDate } from '#/lib/format'
+import { cn } from '#/lib/utils'
 import { Button } from '#/components/ui/button'
 import {
   DialogClose,
@@ -31,6 +37,7 @@ function createInitialState(defaultCurrency: string) {
   const normalizedCurrency = defaultCurrency.trim().toUpperCase()
 
   return {
+    assetName: '',
     assetType: 'equity' as 'equity' | 'crypto',
     date: todayIsoDate(),
     nativeCurrency: isUserCurrency(normalizedCurrency)
@@ -109,12 +116,19 @@ export default function AddTransactionDialog({
   const defaultCurrency = userSettings?.currency ?? portfolio.homeCurrency
   const [form, setForm] = useState(() => createInitialState(defaultCurrency))
   const [error, setError] = useState<string | null>(null)
+  const [highlightedAssetIndex, setHighlightedAssetIndex] = useState(0)
+  const [isAssetInputFocused, setIsAssetInputFocused] = useState(false)
+  const [isAssetMenuOpen, setIsAssetMenuOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const deferredTicker = useDeferredValue(form.ticker)
 
   useEffect(() => {
     if (!open) return
     setForm(createInitialState(defaultCurrency))
     setError(null)
+    setHighlightedAssetIndex(0)
+    setIsAssetInputFocused(false)
+    setIsAssetMenuOpen(false)
   }, [defaultCurrency, open])
 
   const canSubmit = useMemo(
@@ -128,6 +142,27 @@ export default function AddTransactionDialog({
       ),
     [form.date, form.nativeCurrency, form.pricePerUnit, form.quantity, form.ticker],
   )
+  const assetAutocompleteOptions = useMemo(
+    () => getAssetAutocompleteOptions(deferredTicker),
+    [deferredTicker],
+  )
+  const shouldShowAssetMenu =
+    isAssetMenuOpen && form.ticker.trim().length > 0
+
+  useEffect(() => {
+    setHighlightedAssetIndex(0)
+  }, [deferredTicker])
+
+  function handleAssetOptionSelect(option: AssetAutocompleteOption) {
+    setForm((current) => ({
+      ...current,
+      assetName: option.name,
+      ticker: option.symbol,
+      assetType: option.assetType,
+    }))
+    setHighlightedAssetIndex(0)
+    setIsAssetMenuOpen(false)
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -136,6 +171,9 @@ export default function AddTransactionDialog({
 
     try {
       await addTransaction({
+        ...(form.assetName.trim()
+          ? { assetName: form.assetName.trim() }
+          : {}),
         assetType: form.assetType,
         date: form.date,
         fxRate: 1,
@@ -184,38 +222,154 @@ export default function AddTransactionDialog({
 
           <div className="flex flex-col gap-3.5 px-6 py-5">
             {/* Asset + Side */}
-            <div className="grid grid-cols-[minmax(0,1fr)_120px_auto] items-end gap-2.5">
+            <input type="hidden" name="asset-name" value={form.assetName} />
+            <input type="hidden" name="asset-type" value={form.assetType} />
+
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2.5">
               <Field label="Asset">
-                <Input
-                  value={form.ticker}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      ticker: event.target.value.toUpperCase(),
-                    }))
-                  }
-                  placeholder="AAPL"
-                  className="h-9 font-semibold uppercase"
-                />
-              </Field>
-              <Field label="Type">
-                <Select
-                  value={form.assetType}
-                  onValueChange={(value: 'equity' | 'crypto') =>
-                    setForm((current) => ({
-                      ...current,
-                      assetType: value,
-                    }))
-                  }
+                <div
+                  className="relative"
+                  onBlur={(event) => {
+                    const nextFocused =
+                      event.relatedTarget instanceof Node
+                        ? event.relatedTarget
+                        : null
+
+                    if (!event.currentTarget.contains(nextFocused)) {
+                      setIsAssetInputFocused(false)
+                      setIsAssetMenuOpen(false)
+                    }
+                  }}
                 >
-                  <SelectTrigger className="h-9 min-h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="equity">Equity</SelectItem>
-                    <SelectItem value="crypto">Crypto</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Input
+                    value={form.ticker}
+                    onFocus={() => {
+                      setIsAssetInputFocused(true)
+                      setIsAssetMenuOpen(true)
+                    }}
+                    onChange={(event) => {
+                      const nextTicker = event.target.value.toUpperCase()
+                      const matchedOption =
+                        findAssetAutocompleteOption(nextTicker)
+
+                      setForm((current) => ({
+                        ...current,
+                        assetName: matchedOption?.name ?? '',
+                        assetType: matchedOption?.assetType ?? 'equity',
+                        ticker: nextTicker,
+                      }))
+                      setIsAssetMenuOpen(true)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setIsAssetMenuOpen(false)
+                        return
+                      }
+
+                      if (assetAutocompleteOptions.length === 0) {
+                        return
+                      }
+
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault()
+                        setIsAssetMenuOpen(true)
+                        setHighlightedAssetIndex((current) =>
+                          current === assetAutocompleteOptions.length - 1
+                            ? 0
+                            : current + 1,
+                        )
+                      }
+
+                      if (event.key === 'ArrowUp') {
+                        event.preventDefault()
+                        setIsAssetMenuOpen(true)
+                        setHighlightedAssetIndex((current) =>
+                          current === 0
+                            ? assetAutocompleteOptions.length - 1
+                            : current - 1,
+                        )
+                      }
+
+                      if (event.key === 'Enter' && shouldShowAssetMenu) {
+                        const selectedOption =
+                          assetAutocompleteOptions[highlightedAssetIndex]
+
+                        if (!selectedOption) {
+                          return
+                        }
+
+                        event.preventDefault()
+                        handleAssetOptionSelect(selectedOption)
+                      }
+                    }}
+                    placeholder="AAPL or Bitcoin"
+                    autoComplete="off"
+                    className={cn(
+                      'h-9 font-semibold uppercase',
+                      form.assetName &&
+                        !isAssetInputFocused &&
+                        'text-transparent selection:bg-transparent',
+                    )}
+                  />
+
+                  {form.assetName && !isAssetInputFocused ? (
+                    <div className="pointer-events-none absolute inset-0 flex items-center px-2.5">
+                      <span className="font-semibold uppercase text-foreground">
+                        {form.ticker}
+                      </span>
+                      <span className="relative top-px ml-2 truncate text-xs font-medium normal-case text-muted-foreground">
+                        {form.assetName}.
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {shouldShowAssetMenu ? (
+                    <div className="absolute top-full z-20 mt-1 w-full overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-lg">
+                      {assetAutocompleteOptions.length > 0 ? (
+                        <div className="max-h-64 overflow-y-auto py-1">
+                          {assetAutocompleteOptions.map((option, index) => (
+                            <button
+                              key={`${option.label}:${option.symbol}`}
+                              type="button"
+                              onMouseDown={(event) => event.preventDefault()}
+                              onMouseEnter={() => setHighlightedAssetIndex(index)}
+                              onClick={() => handleAssetOptionSelect(option)}
+                              className={cn(
+                                'flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/60 focus:bg-accent/60 focus:outline-none',
+                                index === highlightedAssetIndex && 'bg-accent/60',
+                              )}
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold uppercase">
+                                    {option.symbol}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      'rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] lowercase',
+                                      option.label === 'crypto'
+                                        ? 'border-primary/20 bg-primary/10 text-primary'
+                                        : 'border-border bg-muted text-muted-foreground',
+                                    )}
+                                  >
+                                    {option.label}
+                                  </span>
+                                </div>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {option.name}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">
+                          No matching assets found.
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
               </Field>
               <div className="grid gap-1.5">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
