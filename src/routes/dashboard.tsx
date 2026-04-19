@@ -168,7 +168,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
   const needsRefresh = Boolean(
     cachedHoldings &&
       cachedHoldings.hasOpenPositions &&
-      (cachedHoldings.missingCount > 0 || cachedHoldings.anyStale),
+      cachedHoldings.requiresRefresh,
   )
 
   useEffect(() => {
@@ -287,6 +287,8 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
 
   const resolvedTotalValueCurrency =
     totalValueFxRate === null ? portfolio.homeCurrency : totalValueCurrency
+  const holdingsDisplayFxRate = totalValueFxRate ?? 1
+  const holdingsDisplayCurrency = resolvedTotalValueCurrency
   const displayedTotalValue =
     (snapshot?.totalValue ?? 0) * (totalValueFxRate ?? 1)
   const isTotalValueLoading =
@@ -377,10 +379,10 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent">
-                          <TableHead>Ticker</TableHead>
+                          <TableHead>Asset</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">Price</TableHead>
-                          <TableHead className="text-right">Value</TableHead>
+                          <TableHead className="text-right">Average price</TableHead>
+                          <TableHead className="text-right">Current price</TableHead>
                           <TableHead className="text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -396,17 +398,21 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                 {formatQuantity(holding.quantity)}
                               </TableCell>
                               <TableCell className="text-right tabular-nums">
-                                <div className="inline-flex items-center gap-2">
-                                  {holding.currentPrice === null
-                                    ? '—'
-                                    : formatCurrency(holding.currentPrice, portfolio.homeCurrency)}
-                                  {holding.cacheStatus === 'stale' ? <StaleBadge /> : null}
-                                </div>
+                                {formatCurrency(
+                                  holding.avgCostBasis * holdingsDisplayFxRate,
+                                  holdingsDisplayCurrency,
+                                )}
                               </TableCell>
                               <TableCell className="text-right tabular-nums font-medium text-foreground">
-                                {holding.value === null
-                                  ? '—'
-                                  : formatCurrency(holding.value, portfolio.homeCurrency)}
+                                <div className="inline-flex items-center gap-2">
+                                  {holding.value === null
+                                    ? '—'
+                                    : formatCurrency(
+                                      holding.value * holdingsDisplayFxRate,
+                                      holdingsDisplayCurrency,
+                                    )}
+                                  {holding.cacheStatus === 'stale' ? <StaleBadge /> : null}
+                                </div>
                               </TableCell>
                               <TableCell
                                 className={cn(
@@ -443,23 +449,27 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-sm">
                               <div>
-                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Price</p>
-                                <div className="mt-1 flex items-center gap-2">
-                                  <span className="tabular-nums text-foreground">
-                                    {holding.currentPrice === null
-                                      ? '—'
-                                      : formatCurrency(holding.currentPrice, portfolio.homeCurrency)}
-                                  </span>
-                                  {holding.cacheStatus === 'stale' ? <StaleBadge /> : null}
-                                </div>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Average price</p>
+                                <p className="mt-1 tabular-nums text-foreground">
+                                  {formatCurrency(
+                                    holding.avgCostBasis * holdingsDisplayFxRate,
+                                    holdingsDisplayCurrency,
+                                  )}
+                                </p>
                               </div>
                               <div>
-                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Value</p>
-                                <p className="mt-1 tabular-nums font-medium text-foreground">
-                                  {holding.value === null
-                                    ? '—'
-                                    : formatCurrency(holding.value, portfolio.homeCurrency)}
-                                </p>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Current price</p>
+                                <div className="mt-1 flex items-center gap-2">
+                                  <p className="tabular-nums font-medium text-foreground">
+                                    {holding.value === null
+                                      ? '—'
+                                      : formatCurrency(
+                                        holding.value * holdingsDisplayFxRate,
+                                        holdingsDisplayCurrency,
+                                      )}
+                                  </p>
+                                  {holding.cacheStatus === 'stale' ? <StaleBadge /> : null}
+                                </div>
                               </div>
                               <div>
                                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">P&amp;L</p>

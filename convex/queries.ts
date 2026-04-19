@@ -8,6 +8,7 @@ import {
   unrealizedPnlPct,
   type PortfolioTransactionLike,
 } from '../shared/portfolio'
+import { resolveAssetTypeForPricing } from '../shared/asset-type'
 
 type HoldingSnapshot = {
   assetType: 'equity' | 'crypto'
@@ -15,6 +16,7 @@ type HoldingSnapshot = {
   cacheStatus: 'fresh' | 'missing' | 'stale'
   currentPrice: number | null
   fetchedAt: number | null
+  needsPriceRefresh: boolean
   nativeCurrency: string
   pnl: number | null
   pnlPct: number | null
@@ -79,6 +81,10 @@ function buildHoldingSnapshots(
 
   return holdings.map<HoldingSnapshot>((holding) => {
     const cacheEntry = cacheEntries.get(holding.ticker)
+    const pricingAssetType = resolveAssetTypeForPricing(
+      holding.assetType,
+      holding.ticker,
+    )
     const currentPrice = cacheEntry?.price ?? null
     const value = currentPrice === null ? null : holding.quantity * currentPrice
     const pnl = value === null ? null : unrealizedPnl(value, holding.costBasis)
@@ -90,6 +96,7 @@ function buildHoldingSnapshots(
         : now - cacheEntry.fetchedAt > STALE_PRICE_MS
           ? 'stale'
           : 'fresh'
+    const needsPriceRefresh = pricingAssetType !== holding.assetType
 
     return {
       assetType: holding.assetType,
@@ -97,6 +104,7 @@ function buildHoldingSnapshots(
       cacheStatus,
       currentPrice,
       fetchedAt: cacheEntry?.fetchedAt ?? null,
+      needsPriceRefresh,
       nativeCurrency: holding.nativeCurrency,
       pnl,
       pnlPct,
@@ -202,6 +210,9 @@ export const getCachedHoldings = query({
       missingCount: items.filter((item) => item.cacheStatus === 'missing').length,
       openPositionsCount: holdings.length,
       portfolio,
+      requiresRefresh: items.some(
+        (item) => item.cacheStatus !== 'fresh' || item.needsPriceRefresh,
+      ),
       totalPnl: knownValueItems.reduce(
         (sum, item) => sum + (item.pnl ?? 0),
         0,

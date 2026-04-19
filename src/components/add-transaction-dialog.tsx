@@ -31,6 +31,7 @@ function createInitialState(defaultCurrency: string) {
   const normalizedCurrency = defaultCurrency.trim().toUpperCase()
 
   return {
+    assetType: 'equity' as 'equity' | 'crypto',
     date: todayIsoDate(),
     nativeCurrency: isUserCurrency(normalizedCurrency)
       ? normalizedCurrency
@@ -135,7 +136,7 @@ export default function AddTransactionDialog({
 
     try {
       await addTransaction({
-        assetType: 'equity',
+        assetType: form.assetType,
         date: form.date,
         fxRate: 1,
         nativeCurrency: form.nativeCurrency,
@@ -183,7 +184,7 @@ export default function AddTransactionDialog({
 
           <div className="flex flex-col gap-3.5 px-6 py-5">
             {/* Asset + Side */}
-            <div className="grid grid-cols-[1fr_auto] items-end gap-2.5">
+            <div className="grid grid-cols-[minmax(0,1fr)_120px_auto] items-end gap-2.5">
               <Field label="Asset">
                 <Input
                   value={form.ticker}
@@ -196,6 +197,25 @@ export default function AddTransactionDialog({
                   placeholder="AAPL"
                   className="h-9 font-semibold uppercase"
                 />
+              </Field>
+              <Field label="Type">
+                <Select
+                  value={form.assetType}
+                  onValueChange={(value: 'equity' | 'crypto') =>
+                    setForm((current) => ({
+                      ...current,
+                      assetType: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-9 min-h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="equity">Equity</SelectItem>
+                    <SelectItem value="crypto">Crypto</SelectItem>
+                  </SelectContent>
+                </Select>
               </Field>
               <div className="grid gap-1.5">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">

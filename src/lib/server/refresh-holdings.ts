@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { resolveAssetTypeForPricing } from '../../../shared/asset-type'
 
 function getConvexUrl() {
   const url = process.env.VITE_CONVEX_URL
@@ -142,19 +143,23 @@ export const refreshHoldings = createServerFn({ method: 'POST' })
 
     if (
       !snapshot.hasOpenPositions ||
-      (!snapshot.anyStale && snapshot.missingCount === 0)
+      !snapshot.requiresRefresh
     ) {
       return snapshot
     }
 
     for (const item of snapshot.items) {
-      if (item.cacheStatus === 'fresh') {
+      if (item.cacheStatus === 'fresh' && !item.needsPriceRefresh) {
         continue
       }
 
       try {
+        const pricingAssetType = resolveAssetTypeForPricing(
+          item.assetType,
+          item.ticker,
+        )
         const currentPrice =
-          item.assetType === 'crypto'
+          pricingAssetType === 'crypto'
             ? await fetchCryptoPrice(item.ticker, snapshot.portfolio.homeCurrency)
             : (await fetchEquityPrice(item.ticker)) *
               (await fetchFxRate(
