@@ -9,6 +9,7 @@ export default tseslint.config(
       'node_modules/**',
       'dist/**',
       '.output/**',
+      '.claude/worktrees/**',
       'src/routeTree.gen.ts',
       'convex/_generated/**',
     ],

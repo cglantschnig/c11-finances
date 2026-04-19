@@ -43,7 +43,7 @@ const LANDING_THEME = {
     backgroundImage:
       'radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 34%), radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%)',
     foreground: 'oklch(0.19 0.014 236)',
-    gridLine: 'rgba(15,23,42,0.08)',
+    gridLine: 'rgba(15,23,42,0.04)',
     border: 'rgba(15,23,42,0.12)',
     borderSoft: 'rgba(15,23,42,0.08)',
     borderSubtle: 'rgba(15,23,42,0.06)',
@@ -98,10 +98,7 @@ function HomePage() {
 
       <div className="relative z-10 mx-auto flex min-h-svh max-w-[1280px] flex-col px-12">
         {/* Nav */}
-        <nav
-          className="flex items-center justify-between py-[22px]"
-          style={{ borderBottom: `1px solid ${palette.border}` }}
-        >
+        <nav className="flex items-center justify-between py-[22px]">
           <Link to="/" className="flex items-center gap-3 no-underline">
             <Logo className="size-[38px]" />
             <div>
