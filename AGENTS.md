@@ -1,9 +1,15 @@
-<!-- convex-ai-start -->
-This project uses [Convex](https://convex.dev) as its backend.
+## General
 
 Use Bun for package management and package runner commands in this repository. Prefer `bun`, `bun run`, `bun add`, `bun remove`, and `bunx`; do not use `pnpm`, `npm`, or `npx`.
 
 Use kebab-case for project-authored filenames. Keep framework-required or generated filenames unchanged when a tool depends on a specific name, such as `AGENTS.md`, `CLAUDE.md`, `README.md`, `src/routes/__root.tsx`, or generated files.
+
+## Build Verification
+
+When you need to verify changes, run `bun run lint` first and then `bun run build` from the repository root. Treat zero exit codes as the primary success signal.
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
 
 When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
 
