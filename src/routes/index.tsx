@@ -1,11 +1,11 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { IconArrowRight } from '@tabler/icons-react'
+import { IconArrowRight, IconMoon, IconSun } from '@tabler/icons-react'
 import { useTheme } from 'next-themes'
 import Logo from '#/components/logo'
-import ModeToggle from '#/components/mode-toggle'
 import { hasClerkPublishableKey } from '#/integrations/clerk/config'
+import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/')({
   ssr: false,
@@ -59,9 +59,10 @@ const LANDING_THEME = {
 } as const
 
 function HomePage() {
-  const { resolvedTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const palette =
     resolvedTheme === 'light' ? LANDING_THEME.light : LANDING_THEME.dark
+  const isDark = resolvedTheme === 'dark'
 
   return (
     <div
@@ -151,7 +152,20 @@ function HomePage() {
                 </SignInButton>
               )}
             </SignedOut>
-            <ModeToggle />
+            <NavGhostButton
+              className="w-[35px] px-0"
+              borderColor={palette.border}
+              foreground={palette.foreground}
+              hoverBackground={palette.surfaceAlt}
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+            >
+              {isDark ? (
+                <IconMoon className="size-4" />
+              ) : (
+                <IconSun className="size-4" />
+              )}
+            </NavGhostButton>
           </div>
         </nav>
 
@@ -319,6 +333,7 @@ function HomePage() {
 }
 
 function NavGhostButton({
+  className,
   children,
   borderColor,
   foreground,
@@ -328,6 +343,7 @@ function NavGhostButton({
 }: ComponentPropsWithoutRef<'button'> & {
   borderColor: string
   children: ReactNode
+  className?: string
   foreground: string
   hoverBackground: string
 }) {
@@ -335,12 +351,14 @@ function NavGhostButton({
     <button
       {...props}
       type={type}
-      className="cursor-pointer text-[13px] font-medium transition-colors"
+      className={cn(
+        'inline-flex h-[35px] cursor-pointer items-center justify-center gap-2 px-[18px] text-[13px] font-medium transition-colors',
+        className,
+      )}
       style={{
         background: 'none',
         border: `1px solid ${borderColor}`,
         color: foreground,
-        padding: '7px 18px',
         fontFamily: 'inherit',
       }}
       onMouseEnter={(e) => {

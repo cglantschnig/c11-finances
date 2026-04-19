@@ -119,7 +119,7 @@ export default function PortfolioAppShell({
             <div>
               <p className="text-sm font-medium text-sidebar-foreground">Theme</p>
               <p className="text-xs text-sidebar-foreground/70">
-                Light, dark, or system
+                Light or dark
               </p>
             </div>
             <ModeToggle />
