@@ -291,6 +291,13 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
   const holdingsDisplayCurrency = resolvedTotalValueCurrency
   const displayedTotalValue =
     (snapshot?.totalValue ?? 0) * (totalValueFxRate ?? 1)
+  const totalPnl = snapshot?.totalPnl ?? 0
+  const totalCostBasis = (snapshot?.totalValue ?? 0) - totalPnl
+  const totalPnlIsPositive = totalPnl >= 0
+  const totalPnlPct =
+    Math.abs(totalCostBasis) < Number.EPSILON
+      ? 0
+      : (totalPnl / totalCostBasis) * 100
   const isTotalValueLoading =
     !isInitialLoad &&
     snapshot !== null &&
@@ -309,9 +316,24 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
 
           {/* Hero: total value */}
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Total value
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                Total value
+              </p>
+              {isInitialLoad || isTotalValueLoading ? null : (
+                <p
+                  className={cn(
+                    'inline-flex items-center gap-1 text-xs font-medium tabular-nums',
+                    totalPnlIsPositive ? 'text-positive' : 'text-negative',
+                  )}
+                >
+                  {totalPnlIsPositive
+                    ? <IconTrendingUp className="size-3.5" />
+                    : <IconTrendingDown className="size-3.5" />}
+                  {formatPercent(totalPnlPct)}
+                </p>
+              )}
+            </div>
             <div className="mt-2">
               {isInitialLoad || isTotalValueLoading ? (
                 <Skeleton className="h-14 w-56 rounded-full" />
