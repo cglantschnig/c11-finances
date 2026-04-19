@@ -88,7 +88,7 @@ function LiveBadge({ lastUpdatedAt }: { lastUpdatedAt: number | null }) {
           Live
         </Badge>
       </TooltipTrigger>
-      <TooltipContent sideOffset={8}>
+      <TooltipContent side="right" sideOffset={8}>
         {lastUpdatedAt === null
           ? 'Last update time unavailable.'
           : `Last updated at ${formatLastUpdatedAt(lastUpdatedAt)}.`}
