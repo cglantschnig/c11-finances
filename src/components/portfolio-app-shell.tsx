@@ -125,15 +125,7 @@ export default function PortfolioAppShell({
             <ModeToggle />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-3">
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">Account</p>
-              <p className="text-xs text-sidebar-foreground/70">
-                Manage your session
-              </p>
-            </div>
-            <HeaderUser />
-          </div>
+          <HeaderUser />
         </SidebarFooter>
       </Sidebar>
 
