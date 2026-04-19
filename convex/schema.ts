@@ -32,7 +32,7 @@ export default defineSchema({
     currency: v.union(
       v.literal('EUR'),
       v.literal('USD'),
-      v.literal('BHT'),
+      v.literal('THB'),
       v.literal('PHP'),
     ),
     userTokenIdentifier: v.string(),

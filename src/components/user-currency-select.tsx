@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 
-const currencyOptions = ['EUR', 'USD', 'BHT', 'PHP'] as const
+const currencyOptions = ['EUR', 'USD', 'THB', 'PHP'] as const
 type UserCurrency = (typeof currencyOptions)[number]
 const defaultCurrency: UserCurrency = 'EUR'
 
