@@ -113,7 +113,7 @@ function HomePage() {
                   className="text-[0.5625rem] font-semibold uppercase"
                   style={{ letterSpacing: '0.22em', color: palette.mutedStrong }}
                 >
-                  F11
+                  c11
                 </p>
                 <p
                   className="text-base font-semibold leading-none"

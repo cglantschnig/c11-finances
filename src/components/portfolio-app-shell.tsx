@@ -53,7 +53,7 @@ function Brand() {
       <Logo className="size-11" />
       <div className="min-w-0">
         <p className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-sidebar-foreground/60">
-          F11
+          c11
         </p>
         <p className="truncate font-heading text-base text-sidebar-foreground">
           Finances
@@ -144,7 +144,7 @@ export default function PortfolioAppShell({
             <Logo className="size-9 md:hidden" />
             <div className="min-w-0 flex-1">
               <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                F11 Finances
+                c11 Finances
               </p>
               <h1 className="truncate font-heading text-lg text-foreground">
                 {title}

@@ -19,7 +19,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'F11 Finances',
+        title: 'c11 Finances',
       },
     ],
     links: [

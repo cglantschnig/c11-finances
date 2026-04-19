@@ -6,7 +6,7 @@ type LogoProps = Omit<ComponentPropsWithoutRef<'img'>, 'src'> & {
 }
 
 export default function Logo({
-  alt = 'F11 Finances logo',
+  alt = 'c11 Finances logo',
   className,
   framed = false,
   ...props
