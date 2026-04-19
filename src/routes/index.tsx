@@ -2,12 +2,12 @@ import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   IconArrowRight,
-  IconChartHistogram,
   IconCoins,
   IconRefresh,
   IconShieldLock,
   IconReceipt2,
 } from '@tabler/icons-react'
+import Logo from '#/components/logo'
 import ModeToggle from '#/components/mode-toggle'
 import { hasClerkPublishableKey } from '#/integrations/clerk/config'
 import { Badge } from '#/components/ui/badge'
@@ -45,9 +45,7 @@ function HomePage() {
       <div className="mx-auto flex min-h-svh max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3 no-underline">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <IconChartHistogram className="size-5" />
-            </div>
+            <Logo className="size-11 sm:size-12" />
             <div>
               <p className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-muted-foreground">
                 F11
@@ -73,6 +71,10 @@ function HomePage() {
             </Badge>
 
             <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Logo className="size-14 sm:size-16" />
+                <div className="h-px flex-1 bg-border" />
+              </div>
               <h1 className="max-w-3xl font-heading text-4xl leading-tight text-foreground sm:text-5xl lg:text-6xl">
                 A clean workspace for holdings, market value, and raw trade
                 history.
