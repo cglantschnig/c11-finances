@@ -1,30 +1,40 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useMutation } from 'convex/react'
+import { IconX } from '@tabler/icons-react'
+import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
-import { COMMON_CURRENCIES, fetchHistoricalFxRate } from '#/lib/fx'
+import {
+  defaultUserCurrency,
+  isUserCurrency,
+  userCurrencyOptions,
+} from '#/config/currencies'
 import { todayIsoDate } from '#/lib/format'
 import { Button } from '#/components/ui/button'
 import {
+  DialogClose,
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '#/components/ui/select'
 
-function createInitialState(homeCurrency: string) {
-  const isCommon = COMMON_CURRENCIES.includes(
-    homeCurrency as (typeof COMMON_CURRENCIES)[number],
-  )
+function createInitialState(defaultCurrency: string) {
+  const normalizedCurrency = defaultCurrency.trim().toUpperCase()
 
   return {
     date: todayIsoDate(),
-    fxRate: '1',
-    nativeCurrency: isCommon ? homeCurrency : 'OTHER',
-    nativeCurrencyOther: isCommon ? '' : homeCurrency,
+    nativeCurrency: isUserCurrency(normalizedCurrency)
+      ? normalizedCurrency
+      : defaultUserCurrency,
     pricePerUnit: '',
     quantity: '',
     side: 'buy' as 'buy' | 'sell',
@@ -81,7 +91,7 @@ function SideToggle({
             }
       }
       aria-label={isBuy ? 'Buy (click to switch to Sell)' : 'Sell (click to switch to Buy)'}
-      className="h-9 cursor-pointer border px-4 text-[13px] font-semibold tracking-[0.03em] whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      className="flex h-9 w-24 cursor-pointer items-center justify-center border px-4 text-[13px] font-semibold tracking-[0.03em] whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
     >
       {isBuy ? '▲ Buy' : '▼ Sell'}
     </button>
@@ -94,78 +104,28 @@ export default function AddTransactionDialog({
   portfolio,
 }: AddTransactionDialogProps) {
   const addTransaction = useMutation(api.mutations.addTransaction)
-  const [form, setForm] = useState(() => createInitialState(portfolio.homeCurrency))
+  const userSettings = useQuery(api.queries.getUserSettings, {})
+  const defaultCurrency = userSettings?.currency ?? portfolio.homeCurrency
+  const [form, setForm] = useState(() => createInitialState(defaultCurrency))
   const [error, setError] = useState<string | null>(null)
-  const [isFetchingFx, setIsFetchingFx] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setForm(createInitialState(portfolio.homeCurrency))
+    setForm(createInitialState(defaultCurrency))
     setError(null)
-  }, [open, portfolio.homeCurrency])
+  }, [defaultCurrency, open])
 
-  const resolvedNativeCurrency =
-    form.nativeCurrency === 'OTHER'
-      ? form.nativeCurrencyOther.trim().toUpperCase()
-      : form.nativeCurrency
-
-  useEffect(() => {
-    if (!open) return
-    if (!resolvedNativeCurrency || form.date.length !== 10) return
-
-    if (resolvedNativeCurrency === portfolio.homeCurrency) {
-      setForm((current) => ({ ...current, fxRate: '1' }))
-      setIsFetchingFx(false)
-      return
-    }
-
-    const controller = new AbortController()
-    const timeout = window.setTimeout(async () => {
-      try {
-        setIsFetchingFx(true)
-        setError(null)
-        const rate = await fetchHistoricalFxRate({
-          base: resolvedNativeCurrency,
-          date: form.date,
-          quote: portfolio.homeCurrency,
-          signal: controller.signal,
-        })
-        setForm((current) => ({ ...current, fxRate: rate.toFixed(6) }))
-      } catch (fetchError) {
-        if (!controller.signal.aborted) {
-          setError(
-            fetchError instanceof Error
-              ? fetchError.message
-              : 'Unable to fetch the FX rate.',
-          )
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsFetchingFx(false)
-        }
-      }
-    }, 350)
-
-    return () => {
-      controller.abort()
-      window.clearTimeout(timeout)
-    }
-  }, [form.date, open, portfolio.homeCurrency, resolvedNativeCurrency])
-
-  const showFxField =
-    resolvedNativeCurrency.length === 3 && resolvedNativeCurrency !== portfolio.homeCurrency
   const canSubmit = useMemo(
     () =>
       Boolean(
         form.ticker.trim() &&
-          resolvedNativeCurrency.length === 3 &&
+          form.nativeCurrency.length === 3 &&
           form.quantity &&
           form.pricePerUnit &&
-          form.date &&
-          (!showFxField || (Number(form.fxRate) > 0 && form.fxRate !== '')),
+          form.date,
       ),
-    [form.date, form.fxRate, form.pricePerUnit, form.quantity, form.ticker, resolvedNativeCurrency, showFxField],
+    [form.date, form.nativeCurrency, form.pricePerUnit, form.quantity, form.ticker],
   )
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -177,8 +137,8 @@ export default function AddTransactionDialog({
       await addTransaction({
         assetType: 'equity',
         date: form.date,
-        fxRate: Number(form.fxRate),
-        nativeCurrency: resolvedNativeCurrency,
+        fxRate: 1,
+        nativeCurrency: form.nativeCurrency,
         portfolioId: portfolio._id,
         pricePerUnit: Number(form.pricePerUnit),
         quantity: Number(form.quantity),
@@ -188,7 +148,7 @@ export default function AddTransactionDialog({
 
       toast.success('Transaction added', { duration: 2000 })
       onOpenChange(false)
-      setForm(createInitialState(portfolio.homeCurrency))
+      setForm(createInitialState(defaultCurrency))
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -202,12 +162,23 @@ export default function AddTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[400px]">
+      <DialogContent
+        showCloseButton={false}
+        className="gap-0 overflow-hidden p-0 sm:max-w-[420px]"
+      >
         <form onSubmit={handleSubmit}>
-          <DialogHeader className="border-b px-6 py-[18px]">
-            <DialogTitle className="text-[15px] font-semibold tracking-[-0.01em]">
-              Add transaction
-            </DialogTitle>
+          <DialogHeader className="border-b px-6 py-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle className="text-[15px] font-semibold tracking-[-0.01em]">
+                Add transaction
+              </DialogTitle>
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon-sm" className="shrink-0">
+                  <IconX />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </DialogClose>
+            </div>
           </DialogHeader>
 
           <div className="flex flex-col gap-3.5 px-6 py-5">
@@ -238,7 +209,7 @@ export default function AddTransactionDialog({
             </div>
 
             {/* Quantity + Price/Currency */}
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2.5">
               <Field label="Quantity">
                 <Input
                   inputMode="decimal"
@@ -267,24 +238,29 @@ export default function AddTransactionDialog({
                     placeholder="183.40"
                     className="h-9 flex-1 rounded-r-none border-r-0 focus-visible:z-10"
                   />
-                  <select
-                    aria-label="Currency"
+                  <Select
                     value={form.nativeCurrency}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setForm((current) => ({
                         ...current,
-                        nativeCurrency: event.target.value,
+                        nativeCurrency: value,
                       }))
                     }
-                    className="h-9 w-[68px] shrink-0 border border-input bg-background px-2 text-[12px] text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
                   >
-                    {COMMON_CURRENCIES.map((currency) => (
-                      <option key={currency} value={currency}>
-                        {currency}
-                      </option>
-                    ))}
-                    <option value="OTHER">Other</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label="Currency"
+                      className="h-9 min-h-9 w-[104px] shrink-0 rounded-l-none border-l-0 bg-background px-3 text-[12px] text-foreground"
+                    >
+                      <SelectValue placeholder="Currency" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" align="end">
+                      {userCurrencyOptions.map((currency) => (
+                        <SelectItem key={currency} value={currency}>
+                          {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </Field>
             </div>
@@ -304,53 +280,13 @@ export default function AddTransactionDialog({
               />
             </Field>
 
-            {/* ISO 4217 code — only shown when Other is selected */}
-            {form.nativeCurrency === 'OTHER' && (
-              <Field label="ISO 4217 code">
-                <Input
-                  maxLength={3}
-                  value={form.nativeCurrencyOther}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      nativeCurrencyOther: event.target.value.toUpperCase(),
-                    }))
-                  }
-                  placeholder="CHF"
-                  className="h-9 uppercase"
-                />
-              </Field>
-            )}
-
-            {/* FX rate — only shown when currency differs from home */}
-            {showFxField && (
-              <Field
-                label={
-                  isFetchingFx
-                    ? 'FX rate · Fetching...'
-                    : `FX rate · ${resolvedNativeCurrency} → ${portfolio.homeCurrency}`
-                }
-              >
-                <Input
-                  inputMode="decimal"
-                  value={form.fxRate}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      fxRate: event.target.value,
-                    }))
-                  }
-                  className="h-9"
-                />
-              </Field>
-            )}
           </div>
 
           {error ? (
             <p className="px-6 pb-2 text-sm text-destructive">{error}</p>
           ) : null}
 
-          <DialogFooter className="border-t px-6 py-3.5">
+          <div className="flex justify-end gap-2 border-t px-6 py-4">
             <Button
               type="button"
               variant="outline"
@@ -361,7 +297,7 @@ export default function AddTransactionDialog({
             <Button type="submit" disabled={!canSubmit || isSaving}>
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

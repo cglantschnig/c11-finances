@@ -10,20 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
-
-const currencyOptions = ['EUR', 'USD', 'THB', 'PHP'] as const
-type UserCurrency = (typeof currencyOptions)[number]
-const defaultCurrency: UserCurrency = 'EUR'
-
-function isUserCurrency(value: string): value is UserCurrency {
-  return currencyOptions.includes(value as UserCurrency)
-}
+import {
+  defaultUserCurrency,
+  isUserCurrency,
+  type UserCurrency,
+  userCurrencyOptions,
+} from '#/config/currencies'
 
 export default function UserCurrencySelect() {
   const settings = useQuery(api.queries.getUserSettings, {})
   const setUserCurrency = useMutation(api.mutations.setUserCurrency)
   const [selectedCurrency, setSelectedCurrency] =
-    useState<UserCurrency>(defaultCurrency)
+    useState<UserCurrency>(defaultUserCurrency)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,10 +74,10 @@ export default function UserCurrencySelect() {
             aria-label="Select currency"
             className="h-9 min-w-20 border-sidebar-border/80 bg-sidebar-accent/30 text-sidebar-foreground hover:bg-sidebar-accent/60"
           >
-            <SelectValue placeholder={defaultCurrency} />
+            <SelectValue placeholder={defaultUserCurrency} />
           </SelectTrigger>
           <SelectContent>
-            {currencyOptions.map((currency) => (
+            {userCurrencyOptions.map((currency) => (
               <SelectItem key={currency} value={currency}>
                 {currency}
               </SelectItem>
