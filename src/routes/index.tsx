@@ -65,6 +65,7 @@ function HomePage() {
   const palette =
     resolvedTheme === 'light' ? LANDING_THEME.light : LANDING_THEME.dark
   const isDark = resolvedTheme === 'dark'
+  const currentYear = new Date().getFullYear()
 
   return (
     <div
@@ -81,8 +82,8 @@ function HomePage() {
         className="pointer-events-none absolute inset-0 z-0"
         style={{
           backgroundImage:
-            `linear-gradient(${palette.gridLine} 1px, transparent 1px), linear-gradient(90deg, ${palette.gridLine} 1px, transparent 1px)`,
-          backgroundSize: '80px 80px',
+            `linear-gradient(${palette.gridLine} 0.0625rem, transparent 0.0625rem), linear-gradient(90deg, ${palette.gridLine} 0.0625rem, transparent 0.0625rem)`,
+          backgroundSize: '5rem 5rem',
         }}
       />
 
@@ -91,25 +92,25 @@ function HomePage() {
         src="/logo.png"
         alt=""
         aria-hidden
-        className="pointer-events-none absolute right-[-80px] top-1/2 z-0 w-[580px] -translate-y-1/2"
+        className="pointer-events-none absolute right-[-7.5rem] top-[20%] z-0 w-[20rem] md:right-[-7.5rem] md:top-1/2 md:w-[28.75rem] md:-translate-y-1/2 lg:right-[-5rem] lg:w-[36.25rem]"
         style={{
           opacity: palette.watermarkOpacity,
           filter: palette.watermarkFilter,
         }}
       />
 
-      <div className="relative z-10 mx-auto flex min-h-svh max-w-[1280px] flex-col px-12">
+      <div className="relative z-10 mx-auto flex min-h-svh max-w-[80rem] flex-col px-5 sm:px-8 lg:px-12">
         {/* Nav */}
         <nav
           className="relative left-1/2 right-1/2 -mx-[50vw] w-screen"
           style={{ backgroundColor: palette.headerBackground }}
         >
-          <div className="mx-auto flex max-w-[1280px] items-center justify-between px-12 py-[22px]">
-            <Link to="/" className="flex items-center gap-3 no-underline">
-              <Logo className="size-[38px]" />
+          <div className="mx-auto flex max-w-[80rem] items-center justify-between gap-3 px-5 py-4 sm:px-8 sm:py-5 lg:px-12 lg:py-[1.375rem]">
+            <Link to="/" className="flex min-w-0 items-center gap-2.5 no-underline sm:gap-3">
+              <Logo className="size-8 sm:size-[2.375rem]" />
               <div>
                 <p
-                  className="text-[9px] font-semibold uppercase"
+                  className="text-[0.5625rem] font-semibold uppercase"
                   style={{ letterSpacing: '0.22em', color: palette.mutedStrong }}
                 >
                   F11
@@ -123,14 +124,14 @@ function HomePage() {
               </div>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <SignedIn>
                 <Link
                   to="/dashboard"
-                  className="text-[13px] font-medium transition-colors"
+                  className="text-[0.75rem] font-medium transition-colors sm:text-[0.8125rem]"
                   style={{
-                    border: `1px solid ${palette.border}`,
-                    padding: '7px 18px',
+                    border: `0.0625rem solid ${palette.border}`,
+                    padding: '0.4375rem 0.875rem',
                     background: 'none',
                     color: palette.foreground,
                   }}
@@ -158,7 +159,7 @@ function HomePage() {
                 )}
               </SignedOut>
               <NavGhostButton
-                className="w-[35px] px-0"
+                className="w-[2.1875rem] px-0"
                 borderColor={palette.border}
                 foreground={palette.foreground}
                 hoverBackground={palette.surfaceAlt}
@@ -166,9 +167,21 @@ function HomePage() {
                 aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
               >
                 {isDark ? (
-                  <IconMoon className="size-4" />
+                  <IconMoon
+                    aria-hidden
+                    className="shrink-0"
+                    size="1rem"
+                    strokeWidth={2}
+                    style={{ color: palette.foreground }}
+                  />
                 ) : (
-                  <IconSun className="size-4" />
+                  <IconSun
+                    aria-hidden
+                    className="shrink-0"
+                    size="1rem"
+                    strokeWidth={2}
+                    style={{ color: palette.foreground }}
+                  />
                 )}
               </NavGhostButton>
             </div>
@@ -176,14 +189,14 @@ function HomePage() {
         </nav>
 
         {/* Hero */}
-        <section className="grid flex-1 grid-cols-2 items-center gap-[72px] py-[72px]">
+        <section className="grid flex-1 grid-cols-1 items-start gap-10 py-8 sm:gap-12 sm:py-12 md:py-16 lg:grid-cols-2 lg:items-center lg:gap-[4.5rem] lg:py-[4.5rem]">
           {/* Left: copy + CTA */}
-          <div>
+          <div className="max-w-[35rem]">
             <div
-              className="mb-8 inline-block text-[11px] font-semibold uppercase"
+              className="mb-6 inline-block text-[0.625rem] font-semibold uppercase sm:mb-8 sm:text-[0.6875rem]"
               style={{
-                border: `1px solid ${palette.border}`,
-                padding: '4px 14px',
+                border: `0.0625rem solid ${palette.border}`,
+                padding: '0.25rem 0.875rem',
                 letterSpacing: '0.16em',
                 color: palette.muted,
               }}
@@ -192,7 +205,7 @@ function HomePage() {
             </div>
 
             <h1
-              className="mb-[22px] max-w-[480px] text-[54px] font-bold"
+              className="mb-5 max-w-[12ch] text-[2.5rem] font-bold sm:text-[3rem] lg:mb-[1.375rem] lg:max-w-[30rem] lg:text-[3.375rem]"
               style={{ lineHeight: 1.07, letterSpacing: '-0.025em' }}
             >
               Every position.
@@ -201,7 +214,7 @@ function HomePage() {
             </h1>
 
             <p
-              className="mb-11 max-w-[420px] text-base"
+              className="mb-8 max-w-[36ch] text-[0.9375rem] sm:mb-10 sm:text-base lg:mb-11 lg:max-w-[26.25rem]"
               style={{ lineHeight: 1.65, color: palette.muted }}
             >
               Record transactions across currencies, track open positions by
@@ -211,10 +224,10 @@ function HomePage() {
             <SignedIn>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-2.5 text-[15px] font-semibold no-underline transition-opacity hover:opacity-85 active:scale-[0.98]"
+                className="inline-flex w-full items-center justify-center gap-2.5 text-[0.9375rem] font-semibold no-underline transition-opacity hover:opacity-85 active:scale-[0.98] sm:w-auto"
                 style={{
                   background: palette.positive,
-                  padding: '14px 32px',
+                  padding: '0.875rem 2rem',
                   color: '#fff',
                 }}
               >
@@ -230,10 +243,10 @@ function HomePage() {
               ) : (
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center gap-2.5 text-[15px] font-semibold no-underline transition-opacity hover:opacity-85"
+                  className="inline-flex w-full items-center justify-center gap-2.5 text-[0.9375rem] font-semibold no-underline transition-opacity hover:opacity-85 sm:w-auto"
                   style={{
                     background: palette.positive,
-                    padding: '14px 32px',
+                    padding: '0.875rem 2rem',
                     color: '#fff',
                   }}
                 >
@@ -246,48 +259,92 @@ function HomePage() {
 
           {/* Right: portfolio card */}
           <div
+            className="overflow-hidden shadow-[0_1.25rem_4.375rem_rgba(15,23,42,0.12)]"
             style={{
-              border: `1px solid ${palette.border}`,
+              border: `0.0625rem solid ${palette.border}`,
               background: palette.surface,
-              backdropFilter: 'blur(20px)',
+              backdropFilter: 'blur(1.25rem)',
             }}
           >
             <div
-              className="px-[26px] py-[22px]"
-              style={{ borderBottom: `1px solid ${palette.borderSoft}` }}
+              className="px-5 py-5 sm:px-[1.625rem] sm:py-[1.375rem]"
+              style={{ borderBottom: `0.0625rem solid ${palette.borderSoft}` }}
             >
               <p
-                className="mb-2.5 text-[11px] font-semibold uppercase"
+                className="mb-2.5 text-[0.6875rem] font-semibold uppercase"
                 style={{ letterSpacing: '0.14em', color: palette.mutedStrong }}
               >
                 Portfolio · USD
               </p>
               <p
-                className="text-[34px] font-bold leading-none"
+                className="text-[2.125rem] font-bold leading-none"
                 style={{ letterSpacing: '-0.025em' }}
               >
                 $16,557
               </p>
               <p
-                className="mt-1.5 text-[13px] font-medium"
+                className="mt-1.5 text-[0.8125rem] font-medium"
                 style={{ color: palette.positive }}
               >
                 ↑ +$1,842 today
               </p>
             </div>
 
-            <table className="w-full border-collapse">
+            <div className="md:hidden">
+              {MOCK_HOLDINGS.map((row, i) => (
+                <div
+                  key={row.ticker}
+                  className="flex items-start justify-between gap-4 px-5 py-4"
+                  style={
+                    i > 0
+                      ? { borderTop: `0.0625rem solid ${palette.borderSubtle}` }
+                      : {}
+                  }
+                >
+                  <div>
+                    <div
+                      className="text-[0.875rem] font-semibold"
+                      style={{ color: palette.foreground }}
+                    >
+                      {row.ticker}
+                    </div>
+                    <div
+                      className="mt-1 text-[0.6875rem]"
+                      style={{ color: palette.mutedSoft }}
+                    >
+                      {row.qty}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div
+                      className="text-[0.875rem] font-medium"
+                      style={{ color: palette.muted }}
+                    >
+                      {row.value}
+                    </div>
+                    <div
+                      className="mt-1 text-[0.75rem] font-semibold"
+                      style={{ color: palette.positive }}
+                    >
+                      {row.change}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <table className="hidden w-full border-collapse md:table">
               <thead>
                 <tr>
                   {['Asset', 'Value', 'Change'].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-[11px] font-semibold uppercase"
+                      className="text-left text-[0.6875rem] font-semibold uppercase"
                       style={{
-                        padding: '10px 18px',
+                        padding: '0.625rem 1.125rem',
                         letterSpacing: '0.1em',
                         color: palette.mutedSoft,
-                        borderBottom: `1px solid ${palette.borderSoft}`,
+                        borderBottom: `0.0625rem solid ${palette.borderSoft}`,
                       }}
                     >
                       {h}
@@ -299,31 +356,35 @@ function HomePage() {
                 {MOCK_HOLDINGS.map((row, i) => (
                   <tr
                     key={row.ticker}
-                    style={i > 0 ? { borderTop: `1px solid ${palette.borderSubtle}` } : {}}
+                    style={
+                      i > 0
+                        ? { borderTop: `0.0625rem solid ${palette.borderSubtle}` }
+                        : {}
+                    }
                   >
-                    <td className="align-middle" style={{ padding: '13px 18px' }}>
+                    <td className="align-middle" style={{ padding: '0.8125rem 1.125rem' }}>
                       <div
-                        className="text-[14px] font-semibold"
+                        className="text-[0.875rem] font-semibold"
                         style={{ color: palette.foreground }}
                       >
                         {row.ticker}
                       </div>
                       <div
-                        className="mt-0.5 text-[11px]"
+                        className="mt-0.5 text-[0.6875rem]"
                         style={{ color: palette.mutedSoft }}
                       >
                         {row.qty}
                       </div>
                     </td>
                     <td
-                      className="align-middle text-[14px] font-medium"
-                      style={{ padding: '13px 18px', color: palette.muted }}
+                      className="align-middle text-[0.875rem] font-medium"
+                      style={{ padding: '0.8125rem 1.125rem', color: palette.muted }}
                     >
                       {row.value}
                     </td>
                     <td
-                      className="align-middle text-[13px] font-semibold"
-                      style={{ padding: '13px 18px', color: palette.positive }}
+                      className="align-middle text-[0.8125rem] font-semibold"
+                      style={{ padding: '0.8125rem 1.125rem', color: palette.positive }}
                     >
                       {row.change}
                     </td>
@@ -334,12 +395,12 @@ function HomePage() {
           </div>
         </section>
 
-        <footer className="pb-6 pt-2 text-center">
+        <footer className="pb-5 pt-1 text-center sm:pb-6 sm:pt-2">
           <p
-            className="text-[11px]"
+            className="text-[0.6875rem]"
             style={{ letterSpacing: '0.08em', color: palette.mutedSoft }}
           >
-            Copyright by Christopher Glantschnig
+            {`© ${currentYear} Christopher Glantschnig`}
           </p>
         </footer>
       </div>
@@ -367,12 +428,12 @@ function NavGhostButton({
       {...props}
       type={type}
       className={cn(
-        'inline-flex h-[35px] cursor-pointer items-center justify-center gap-2 px-[18px] text-[13px] font-medium transition-colors',
+        'inline-flex h-[2.1875rem] cursor-pointer items-center justify-center gap-2 px-[0.875rem] text-[0.75rem] font-medium transition-colors sm:px-[1.125rem] sm:text-[0.8125rem]',
         className,
       )}
       style={{
         background: 'none',
-        border: `1px solid ${borderColor}`,
+        border: `0.0625rem solid ${borderColor}`,
         color: foreground,
         fontFamily: 'inherit',
       }}
@@ -401,11 +462,11 @@ function TealCtaButton({
     <button
       {...props}
       type={type}
-      className="inline-flex cursor-pointer items-center gap-2.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-85 active:scale-[0.98]"
+      className="inline-flex w-full cursor-pointer items-center justify-center gap-2.5 text-[0.9375rem] font-semibold text-white transition-opacity hover:opacity-85 active:scale-[0.98] sm:w-auto"
       style={{
         background,
         border: 'none',
-        padding: '14px 32px',
+        padding: '0.875rem 2rem',
         fontFamily: 'inherit',
       }}
     >
