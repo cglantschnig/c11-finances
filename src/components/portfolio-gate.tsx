@@ -15,8 +15,8 @@ import { hasClerkPublishableKey } from '#/integrations/clerk/config'
 import { hasConvexUrl } from '#/integrations/convex/config'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
-import HomeCurrencyDialog from '#/components/HomeCurrencyDialog'
-import SetupState from '#/components/SetupState'
+import HomeCurrencyDialog from '#/components/home-currency-dialog'
+import SetupState from '#/components/setup-state'
 
 type Portfolio = NonNullable<
   FunctionReturnType<typeof api.queries.getViewerPortfolio>

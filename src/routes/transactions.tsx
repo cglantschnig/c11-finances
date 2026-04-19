@@ -11,9 +11,9 @@ import {
 } from '@tabler/icons-react'
 import type { Doc, Id } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
-import AddTransactionDialog from '#/components/AddTransactionDialog'
-import PortfolioAppShell from '#/components/PortfolioAppShell'
-import PortfolioGate from '#/components/PortfolioGate'
+import AddTransactionDialog from '#/components/add-transaction-dialog'
+import PortfolioAppShell from '#/components/portfolio-app-shell'
+import PortfolioGate from '#/components/portfolio-gate'
 import { formatCurrency, formatQuantity } from '#/lib/format'
 import { cn } from '#/lib/utils'
 import {
