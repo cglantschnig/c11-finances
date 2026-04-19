@@ -12,47 +12,47 @@ export const Route = createFileRoute('/')({
 function HomePage() {
   const signedOutPrimaryAction = hasClerkPublishableKey ? (
     <SignInButton mode="modal">
-      <Button className="h-11 rounded-xl px-5">
+      <Button size="lg" className="h-12 rounded-2xl px-5">
         <ShieldCheck className="size-4" />
         Sign in to begin
       </Button>
     </SignInButton>
   ) : (
-    <Button asChild variant="outline" className="h-11 rounded-xl px-5">
+    <Button asChild variant="outline" size="lg" className="h-12 rounded-2xl px-5">
       <Link to="/dashboard">Open setup state</Link>
     </Button>
   )
 
   return (
-    <main className="page-wrap flex min-h-[calc(100svh-4rem)] items-center px-4 py-10 md:px-6">
-      <section className="app-shell relative w-full overflow-hidden rounded-[2rem] p-8 md:p-12">
-        <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6">
-            <p className="eyebrow">Portfolio Tracker</p>
-            <div className="space-y-4">
-              <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-foreground md:text-6xl">
-                Record transactions, cache live prices, and monitor open positions in one dark workspace.
+    <main className="page-wrap px-1 py-3 md:px-0 md:py-4">
+      <section className="workspace-frame overflow-hidden rounded-[2rem] md:rounded-[2.15rem]">
+        <div className="grid min-h-[calc(100svh-1.5rem)] md:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="border-b border-border px-6 py-8 md:border-b-0 md:border-r md:px-8 md:py-10">
+            <div className="brand-wordmark text-[2rem] leading-none">
+              f11 <span>finances</span>
+            </div>
+            <div className="mt-10 space-y-3">
+              <p className="eyebrow">Portfolio Tracker</p>
+              <h1 className="text-4xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
+                A focused workspace for holdings, prices, and raw trade history.
               </h1>
-              <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
-                F11 Finances keeps a simple transaction ledger, converts values
-                into your home currency, and refreshes holdings from cached or
-                live market data.
+              <p className="text-sm leading-7 text-muted-foreground md:text-base">
+                Record transactions, convert everything into a home currency, and
+                monitor open positions in a single data-first interface.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               {hasClerkPublishableKey ? (
                 <>
                   <SignedIn>
-                    <Button asChild className="h-11 rounded-xl px-5">
+                    <Button asChild size="lg" className="h-12 rounded-2xl px-5">
                       <Link to="/dashboard">
-                        Open dashboard
+                        Open portfolio
                         <ArrowRight className="size-4" />
                       </Link>
                     </Button>
                   </SignedIn>
-
                   <SignedOut>{signedOutPrimaryAction}</SignedOut>
                 </>
               ) : (
@@ -61,31 +61,43 @@ function HomePage() {
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <div className="rounded-[1.75rem] border border-border bg-muted/25 p-6">
-              <div className="mb-4 inline-flex rounded-2xl bg-primary/14 p-3 text-primary">
-                <ChartColumnIncreasing className="size-5" />
+          <div className="p-6 md:p-8 md:pt-10">
+            <div className="app-shell overflow-hidden rounded-[1.8rem]">
+              <div className="flex items-center justify-between border-b border-border px-6 py-6">
+                <div>
+                  <p className="eyebrow">Preview</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-foreground">
+                    Product direction
+                  </h2>
+                </div>
+                <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-primary">
+                  <ChartColumnIncreasing className="size-5" />
+                </div>
               </div>
-              <h2 className="text-xl font-semibold text-foreground">
-                Basic v1 workflow
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Set your home currency, add transactions with historical FX, and
-                review holdings and raw transaction history on separate screens.
-              </p>
-            </div>
 
-            <div className="rounded-[1.75rem] border border-border bg-card/60 p-6">
-              <p className="eyebrow">What ships now</p>
-              <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
-                <div className="rounded-2xl border border-border bg-background/30 px-4 py-3">
-                  Cached holdings with stale price indicators.
+              <div className="grid gap-4 p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+                <div className="panel-muted rounded-[1.45rem] p-5">
+                  <p className="eyebrow">What it handles</p>
+                  <div className="mt-4 grid gap-3">
+                    <div className="rounded-[1.1rem] border border-border/80 bg-background/20 px-4 py-4 text-sm text-muted-foreground">
+                      Holdings valued in your portfolio home currency.
+                    </div>
+                    <div className="rounded-[1.1rem] border border-border/80 bg-background/20 px-4 py-4 text-sm text-muted-foreground">
+                      Cached and refreshed prices with stale indicators.
+                    </div>
+                    <div className="rounded-[1.1rem] border border-border/80 bg-background/20 px-4 py-4 text-sm text-muted-foreground">
+                      A transaction ledger with FX-aware historical entries.
+                    </div>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-border bg-background/30 px-4 py-3">
-                  Transaction log with inline delete confirmation.
-                </div>
-                <div className="rounded-2xl border border-border bg-background/30 px-4 py-3">
-                  Auto-fetched historical FX for multi-currency entries.
+
+                <div className="panel-muted rounded-[1.45rem] p-5">
+                  <p className="eyebrow">Current Scope</p>
+                  <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
+                    <p>Dashboard for open positions and unrealized performance.</p>
+                    <p>Transactions page for raw chronological trade records.</p>
+                    <p>First-run setup flow for auth and home-currency creation.</p>
+                  </div>
                 </div>
               </div>
             </div>

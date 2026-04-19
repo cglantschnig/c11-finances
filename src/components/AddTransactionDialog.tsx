@@ -47,6 +47,21 @@ type AddTransactionDialogProps = {
   portfolio: Doc<'portfolios'>
 }
 
+function Field({
+  children,
+  label,
+}: {
+  children: React.ReactNode
+  label: string
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  )
+}
+
 export default function AddTransactionDialog({
   onOpenChange,
   open,
@@ -170,21 +185,20 @@ export default function AddTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-[1.75rem] border border-border/80 bg-[linear-gradient(180deg,hsl(var(--card)),hsl(var(--card)/0.94))] p-0">
+      <DialogContent className="max-w-3xl overflow-hidden rounded-[1.9rem] border border-border bg-[linear-gradient(180deg,hsl(var(--surface-strong)),hsl(var(--surface)))] p-0">
         <form onSubmit={handleSubmit}>
-          <DialogHeader className="px-6 pt-6 md:px-8 md:pt-8">
+          <DialogHeader className="border-b border-border px-6 pt-6 pb-5 md:px-8 md:pt-8">
             <p className="eyebrow">Portfolio</p>
-            <DialogTitle className="text-2xl text-foreground">
+            <DialogTitle className="text-2xl text-foreground md:text-3xl">
               Add transaction
             </DialogTitle>
-            <DialogDescription className="leading-6">
-              Include any fees in the price per unit.
+            <DialogDescription className="leading-7">
+              Record a buy or sell. Include any fees directly in the unit price.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 px-6 py-5 md:grid-cols-2 md:px-8">
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Ticker</span>
+          <div className="grid gap-4 px-6 py-6 md:grid-cols-2 md:px-8">
+            <Field label="Ticker">
               <Input
                 value={form.ticker}
                 onChange={(event) =>
@@ -194,12 +208,11 @@ export default function AddTransactionDialog({
                   }))
                 }
                 placeholder="AAPL"
-                className="h-11 rounded-xl border-border bg-muted/30 uppercase"
+                className="h-11 uppercase"
               />
-            </label>
+            </Field>
 
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Date</span>
+            <Field label="Date">
               <Input
                 type="date"
                 value={form.date}
@@ -209,19 +222,18 @@ export default function AddTransactionDialog({
                     date: event.target.value,
                   }))
                 }
-                className="h-11 rounded-xl border-border bg-muted/30"
+                className="h-11"
               />
-            </label>
+            </Field>
 
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Asset type</span>
+            <Field label="Asset type">
               <Select
                 value={form.assetType}
                 onValueChange={(value: 'equity' | 'crypto') =>
                   setForm((current) => ({ ...current, assetType: value }))
                 }
               >
-                <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30">
+                <SelectTrigger className="h-11 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -229,17 +241,16 @@ export default function AddTransactionDialog({
                   <SelectItem value="crypto">Crypto</SelectItem>
                 </SelectContent>
               </Select>
-            </label>
+            </Field>
 
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Type</span>
+            <Field label="Side">
               <Select
                 value={form.side}
                 onValueChange={(value: 'buy' | 'sell') =>
                   setForm((current) => ({ ...current, side: value }))
                 }
               >
-                <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30">
+                <SelectTrigger className="h-11 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,10 +258,9 @@ export default function AddTransactionDialog({
                   <SelectItem value="sell">Sell</SelectItem>
                 </SelectContent>
               </Select>
-            </label>
+            </Field>
 
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Quantity</span>
+            <Field label="Quantity">
               <Input
                 inputMode="decimal"
                 value={form.quantity}
@@ -261,12 +271,11 @@ export default function AddTransactionDialog({
                   }))
                 }
                 placeholder="10"
-                className="h-11 rounded-xl border-border bg-muted/30"
+                className="h-11"
               />
-            </label>
+            </Field>
 
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Price per unit</span>
+            <Field label="Price per unit">
               <Input
                 inputMode="decimal"
                 value={form.pricePerUnit}
@@ -277,12 +286,11 @@ export default function AddTransactionDialog({
                   }))
                 }
                 placeholder="183.40"
-                className="h-11 rounded-xl border-border bg-muted/30"
+                className="h-11"
               />
-            </label>
+            </Field>
 
-            <label className="grid gap-2">
-              <span className="text-sm text-muted-foreground">Native currency</span>
+            <Field label="Native currency">
               <Select
                 value={form.nativeCurrency}
                 onValueChange={(value) =>
@@ -292,7 +300,7 @@ export default function AddTransactionDialog({
                   }))
                 }
               >
-                <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30">
+                <SelectTrigger className="h-11 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,20 +312,17 @@ export default function AddTransactionDialog({
                   <SelectItem value="OTHER">Other</SelectItem>
                 </SelectContent>
               </Select>
-            </label>
+            </Field>
 
             <div className="grid gap-2">
               <span className="text-sm text-muted-foreground">Home currency</span>
-              <div className="flex h-11 items-center rounded-xl border border-border bg-muted/20 px-3 text-sm text-foreground">
+              <div className="flex h-11 items-center rounded-xl border border-border bg-muted/24 px-3.5 text-sm text-foreground">
                 {portfolio.homeCurrency}
               </div>
             </div>
 
-            {form.nativeCurrency === 'OTHER' && (
-              <label className="grid gap-2 md:col-span-2">
-                <span className="text-sm text-muted-foreground">
-                  ISO 4217 currency code
-                </span>
+            {form.nativeCurrency === 'OTHER' ? (
+              <Field label="ISO 4217 currency code">
                 <Input
                   maxLength={3}
                   value={form.nativeCurrencyOther}
@@ -328,12 +333,12 @@ export default function AddTransactionDialog({
                     }))
                   }
                   placeholder="CHF"
-                  className="h-11 rounded-xl border-border bg-muted/30 uppercase"
+                  className="h-11 uppercase"
                 />
-              </label>
-            )}
+              </Field>
+            ) : null}
 
-            {showFxField && (
+            {showFxField ? (
               <label className="grid gap-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">FX rate</span>
@@ -352,17 +357,17 @@ export default function AddTransactionDialog({
                       fxRate: event.target.value,
                     }))
                   }
-                  className="h-11 rounded-xl border-border bg-muted/30"
+                  className="h-11"
                 />
               </label>
-            )}
+            ) : null}
           </div>
 
-          {error && (
+          {error ? (
             <p className="px-6 pb-2 text-sm text-destructive md:px-8">{error}</p>
-          )}
+          ) : null}
 
-          <DialogFooter className="rounded-b-[1.75rem] border-border/80 bg-muted/20 px-6 py-4 md:px-8">
+          <DialogFooter className="rounded-b-[1.9rem] border-border bg-muted/18 px-6 py-4 md:px-8">
             <Button
               type="button"
               variant="outline"

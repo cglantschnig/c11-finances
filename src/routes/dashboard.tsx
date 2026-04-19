@@ -5,6 +5,7 @@ import { useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import {
   ChartColumnIncreasing,
+  ChevronRight,
   Plus,
   TriangleAlert,
 } from 'lucide-react'
@@ -52,7 +53,7 @@ function StaleBadge() {
       <TooltipTrigger asChild>
         <Badge
           variant="outline"
-          className="border-[hsl(var(--warning)/0.35)] bg-[hsl(var(--warning)/0.12)] text-[hsl(var(--warning))]"
+          className="border-[hsl(var(--warning)/0.3)] bg-[hsl(var(--warning)/0.12)] text-[hsl(var(--warning))]"
         >
           <TriangleAlert className="size-3" />
           Stale
@@ -63,6 +64,44 @@ function StaleBadge() {
       </TooltipContent>
     </Tooltip>
   )
+}
+
+function AssetTypePill({ assetType }: { assetType: string }) {
+  const label = assetType.toUpperCase()
+  const className =
+    assetType === 'crypto' ? 'type-pill type-pill-crypto' : 'type-pill type-pill-equity'
+
+  return <span className={className}>{label}</span>
+}
+
+function holdingsStatus(
+  snapshot: HoldingsSnapshot | null,
+  isRefreshing: boolean,
+  progressCount: number,
+  refreshError: string | null,
+  didRefresh: boolean,
+) {
+  if (refreshError) {
+    return refreshError
+  }
+
+  if (isRefreshing) {
+    return `Refreshing prices ${progressCount}/${snapshot?.openPositionsCount ?? 0}`
+  }
+
+  if (!snapshot?.hasOpenPositions) {
+    return 'No open holdings'
+  }
+
+  if (didRefresh) {
+    return 'Updated just now'
+  }
+
+  if (snapshot.anyStale) {
+    return 'Using cached prices'
+  }
+
+  return 'Live values shown'
 }
 
 function DashboardRoute() {
@@ -151,12 +190,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
         window.clearInterval(progressTimer)
       }
     }
-  }, [
-    cachedHoldings,
-    needsRefresh,
-    portfolio._id,
-    refreshHoldingsFn,
-  ])
+  }, [cachedHoldings, needsRefresh, portfolio._id, refreshHoldingsFn])
 
   const snapshot = useMemo(
     () => refreshedHoldings ?? cachedHoldings ?? null,
@@ -169,205 +203,213 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     isRefreshing &&
     refreshedHoldings === null
 
+  const statusText = holdingsStatus(
+    snapshot,
+    isRefreshing,
+    progressCount,
+    refreshError,
+    refreshedHoldings !== null,
+  )
+
   return (
     <>
       <PortfolioAppShell
-        title="Dashboard"
-        description="Open positions, home-currency market value, and unrealized performance."
+        title="Portfolio"
         onOpenAddTransaction={() => setAddDialogOpen(true)}
         portfolio={portfolio}
       >
         {snapshot && snapshot.hasTransactions === false ? (
-          <section className="app-shell rounded-[1.75rem] p-8 md:p-10">
-            <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-              <div className="rounded-[1.5rem] border border-primary/20 bg-primary/10 p-4 text-primary">
-                <ChartColumnIncreasing className="size-6" />
-              </div>
-              <h2 className="mt-5 text-3xl font-semibold text-foreground">
-                Your dashboard is ready for its first transaction.
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground md:text-base">
-                Add a buy or sell to start building holdings and live market value in {portfolio.homeCurrency}.
-              </p>
-              <Button
-                onClick={() => setAddDialogOpen(true)}
-                className="mt-6 h-11 rounded-xl px-5"
-              >
-                <Plus className="size-4" />
-                Add transaction
-              </Button>
-            </div>
-          </section>
-        ) : (
-          <>
-            <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="app-shell rounded-[1.75rem] p-6 md:p-7">
-                <p className="eyebrow">Total Portfolio Value</p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <h2 className="tabular-nums text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-                    {snapshot
-                      ? formatCurrency(snapshot.totalValue, portfolio.homeCurrency)
-                      : formatCurrency(0, portfolio.homeCurrency)}
-                  </h2>
-                  {snapshot?.anyStale ? <StaleBadge /> : null}
-                  {snapshot?.totalValueIsPartial ? (
-                    <Badge variant="outline" className="text-muted-foreground">
-                      Partial
-                    </Badge>
-                  ) : null}
-                </div>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  Sold positions reduce holdings but cash proceeds are not tracked. Total value reflects current market value of open positions only.
+          <section className="app-shell overflow-hidden rounded-[1.8rem]">
+            <div className="flex flex-col gap-8 px-6 py-7 md:px-8 md:py-9 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="eyebrow">Portfolio</p>
+                <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-foreground md:text-5xl">
+                  Your dashboard is ready for its first transaction.
+                </h1>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground md:text-base">
+                  Add a buy or sell to start building holdings, market value,
+                  and performance in {portfolio.homeCurrency}.
                 </p>
               </div>
 
-              <div className="app-shell rounded-[1.75rem] p-6">
-                <p className="eyebrow">Refresh</p>
-                <div className="mt-3 space-y-3">
-                  <p className="text-sm text-foreground">
-                    {isRefreshing
-                      ? `Fetching prices... ${progressCount}/${snapshot?.openPositionsCount ?? 0} complete`
-                      : snapshot?.hasOpenPositions
-                        ? 'Latest cached or refreshed prices are shown below.'
-                        : 'No open holdings to price yet.'}
-                  </p>
-                  {refreshError ? (
-                    <p className="text-sm text-[hsl(var(--warning))]">
-                      {refreshError}
-                    </p>
+              <Button
+                onClick={() => setAddDialogOpen(true)}
+                size="lg"
+                className="h-12 rounded-2xl px-5"
+              >
+                <Plus className="size-4" />
+                Add Transaction
+              </Button>
+            </div>
+
+            <div className="surface-line" />
+
+            <div className="px-6 py-12 md:px-8">
+              <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+                <div className="rounded-[1.5rem] border border-primary/20 bg-primary/10 p-4 text-primary">
+                  <ChartColumnIncreasing className="size-6" />
+                </div>
+                <h2 className="mt-5 text-2xl font-semibold text-foreground md:text-3xl">
+                  Nothing is being tracked yet.
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground md:text-base">
+                  The layout is in place. Once you add transactions, this page
+                  will show open positions, current prices, and unrealized P&amp;L.
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="app-shell overflow-hidden rounded-[1.8rem]">
+            <div className="flex flex-col gap-6 px-6 py-7 md:px-8 md:py-8 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="eyebrow">Total Portfolio Value</p>
+                <h1 className="mt-2 tabular-nums text-5xl font-semibold tracking-[-0.05em] text-foreground md:text-6xl">
+                  {snapshot
+                    ? formatCurrency(snapshot.totalValue, portfolio.homeCurrency)
+                    : formatCurrency(0, portfolio.homeCurrency)}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span>{snapshot?.items.length ?? 0} holdings</span>
+                  <span>&middot;</span>
+                  <span>{portfolio.homeCurrency}</span>
+                  <span>&middot;</span>
+                  <span>{statusText}</span>
+                  {snapshot?.anyStale ? <StaleBadge /> : null}
+                  {snapshot?.totalValueIsPartial ? (
+                    <Badge variant="outline">Partial</Badge>
                   ) : null}
                 </div>
               </div>
-            </section>
 
-            <section className="app-shell rounded-[1.75rem] p-4 md:p-6">
-              <div className="mb-4 flex items-center justify-between gap-3 px-2">
-                <div>
-                  <p className="eyebrow">Holdings</p>
-                  <h3 className="mt-1 text-xl font-semibold text-foreground">
-                    Open positions
-                  </h3>
-                </div>
-              </div>
+              <Button
+                onClick={() => setAddDialogOpen(true)}
+                size="lg"
+                className="h-12 rounded-2xl px-5"
+              >
+                <Plus className="size-4" />
+                Add Transaction
+              </Button>
+            </div>
 
-              {coldLoad ? (
-                <div className="space-y-4">
+            <div className="surface-line" />
+
+            {coldLoad ? (
+              <div className="px-4 py-4 md:px-6">
+                <div className="overflow-hidden rounded-[1.4rem] border border-border/80">
+                  <div className="grid grid-cols-[72px_1.1fr_0.9fr_repeat(4,minmax(120px,1fr))] gap-3 px-5 py-4">
+                    {Array.from({ length: 7 }).map((_, index) => (
+                      <Skeleton
+                        key={index}
+                        className="h-4 w-full rounded-full bg-muted/55"
+                      />
+                    ))}
+                  </div>
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div
                       key={index}
-                      className="grid grid-cols-[1.3fr_repeat(5,minmax(0,1fr))] gap-3 rounded-[1.25rem] border border-border/80 px-4 py-4"
+                      className="grid grid-cols-[72px_1.1fr_0.9fr_repeat(4,minmax(120px,1fr))] gap-3 border-t border-border/70 px-5 py-5"
                     >
-                      {Array.from({ length: 6 }).map((__, cellIndex) => (
+                      {Array.from({ length: 7 }).map((__, cellIndex) => (
                         <Skeleton
                           key={cellIndex}
-                          className="h-5 w-full rounded-full bg-muted/60"
+                          className="h-5 w-full rounded-full bg-muted/55"
                         />
                       ))}
                     </div>
                   ))}
                 </div>
-              ) : snapshot && snapshot.items.length > 0 ? (
+              </div>
+            ) : snapshot && snapshot.items.length > 0 ? (
+              <div className="px-4 py-4 md:px-6">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-border/70">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[72px]" />
                       <TableHead>Ticker</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Avg Cost</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
                       <TableHead className="text-right">Value</TableHead>
-                      <TableHead className="text-right">P&amp;L%</TableHead>
-                      <TableHead className="hidden text-right xl:table-cell">
-                        P&amp;L
-                      </TableHead>
-                      <TableHead className="hidden text-right xl:table-cell">
-                        Qty
-                      </TableHead>
-                      <TableHead className="hidden text-right xl:table-cell">
-                        Avg cost
-                      </TableHead>
+                      <TableHead className="text-right">P&amp;L %</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {snapshot.items.map((holding) => (
-                      <TableRow
-                        key={holding.ticker}
-                        className="border-border/60 hover:bg-muted/20"
-                      >
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium text-foreground">
-                              {holding.ticker}
-                            </div>
-                            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                              {holding.assetType}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="space-y-1">
-                            <div className="tabular-nums font-medium text-foreground">
-                              {holding.value === null
-                                ? '—'
-                                : formatCurrency(
-                                    holding.value,
-                                    portfolio.homeCurrency,
-                                  )}
-                            </div>
-                            <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-                              <span className="tabular-nums">
+                    {snapshot.items.map((holding) => {
+                      const pnlIsPositive = (holding.pnl ?? 0) >= 0
+
+                      return (
+                        <TableRow key={holding.ticker}>
+                          <TableCell className="text-muted-foreground">
+                            <ChevronRight className="size-4" />
+                          </TableCell>
+                          <TableCell className="font-semibold text-foreground">
+                            {holding.ticker}
+                          </TableCell>
+                          <TableCell>
+                            <AssetTypePill assetType={holding.assetType} />
+                          </TableCell>
+                          <TableCell className="tabular-nums text-right text-foreground">
+                            {formatQuantity(holding.quantity)}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-right text-foreground">
+                            {formatCurrency(
+                              holding.avgCostBasis,
+                              portfolio.homeCurrency,
+                            )}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-right text-foreground">
+                            <div className="space-y-1">
+                              <div>
                                 {holding.currentPrice === null
-                                  ? 'No price'
-                                  : `${formatCurrency(
+                                  ? '—'
+                                  : formatCurrency(
                                       holding.currentPrice,
                                       portfolio.homeCurrency,
-                                    )} / unit`}
-                              </span>
-                              {holding.cacheStatus === 'stale' ? <StaleBadge /> : null}
+                                    )}
+                              </div>
+                              {holding.cacheStatus === 'stale' ? (
+                                <div className="flex justify-end">
+                                  <StaleBadge />
+                                </div>
+                              ) : null}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell
-                          className={`tabular-nums text-right font-medium ${
-                            (holding.pnl ?? 0) >= 0
-                              ? 'text-[hsl(var(--positive))]'
-                              : 'text-[hsl(var(--negative))]'
-                          }`}
-                        >
-                          {holding.pnlPct === null ? '—' : formatPercent(holding.pnlPct)}
-                        </TableCell>
-                        <TableCell
-                          className={`tabular-nums hidden text-right xl:table-cell ${
-                            (holding.pnl ?? 0) >= 0
-                              ? 'text-[hsl(var(--positive))]'
-                              : 'text-[hsl(var(--negative))]'
-                          }`}
-                        >
-                          {holding.pnl === null
-                            ? '—'
-                            : formatCurrency(holding.pnl, portfolio.homeCurrency)}
-                        </TableCell>
-                        <TableCell className="tabular-nums hidden text-right xl:table-cell">
-                          {formatQuantity(holding.quantity)}
-                        </TableCell>
-                        <TableCell className="tabular-nums hidden text-right xl:table-cell">
-                          {formatCurrency(
-                            holding.avgCostBasis,
-                            portfolio.homeCurrency,
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-right font-semibold text-foreground">
+                            {holding.value === null
+                              ? '—'
+                              : formatCurrency(
+                                  holding.value,
+                                  portfolio.homeCurrency,
+                                )}
+                          </TableCell>
+                          <TableCell
+                            className={`tabular-nums text-right font-semibold ${
+                              pnlIsPositive
+                                ? 'text-[hsl(var(--positive))]'
+                                : 'text-[hsl(var(--negative))]'
+                            }`}
+                          >
+                            {holding.pnlPct === null ? '—' : formatPercent(holding.pnlPct)}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
-              ) : (
-                <div className="rounded-[1.5rem] border border-dashed border-border px-6 py-12 text-center">
-                  <p className="text-lg font-medium text-foreground">
-                    No open positions right now.
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Your transaction history exists, but every position is fully sold.
-                  </p>
-                </div>
-              )}
-            </section>
-          </>
+              </div>
+            ) : (
+              <div className="px-6 py-14 text-center md:px-8">
+                <p className="text-lg font-medium text-foreground">
+                  No open positions right now.
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Your transaction history exists, but every position is fully sold.
+                </p>
+              </div>
+            )}
+          </section>
         )}
       </PortfolioAppShell>
 

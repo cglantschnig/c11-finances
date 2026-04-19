@@ -27,11 +27,15 @@ function LoadingState({
   title: string
 }) {
   return (
-    <main className="page-wrap flex min-h-[calc(100svh-4rem)] items-center justify-center px-4 py-12">
-      <section className="app-shell w-full max-w-2xl rounded-[2rem] p-8 text-center">
-        <p className="eyebrow">{eyebrow}</p>
-        <div className="mx-auto mt-5 size-12 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-        <h1 className="mt-5 text-2xl font-semibold text-foreground">{title}</h1>
+    <main className="page-wrap px-1 py-3 md:px-0 md:py-4">
+      <section className="workspace-frame flex min-h-[calc(100svh-1.5rem)] items-center justify-center rounded-[2rem] px-4 py-10 md:rounded-[2.15rem]">
+        <div className="app-shell w-full max-w-2xl rounded-[1.8rem] p-8 text-center">
+          <p className="eyebrow">{eyebrow}</p>
+          <div className="mx-auto mt-5 size-12 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+          <h1 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-foreground">
+            {title}
+          </h1>
+        </div>
       </section>
     </main>
   )
@@ -69,25 +73,27 @@ function ConfiguredPortfolioGate({ children }: PortfolioGateProps) {
 
   if (!isSignedIn) {
     return (
-      <main className="page-wrap flex min-h-[calc(100svh-4rem)] items-center justify-center px-4 py-12">
-        <section className="app-shell grid w-full max-w-3xl gap-6 rounded-[2rem] p-8 md:p-10">
-          <p className="eyebrow">Authentication</p>
-          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-2xl space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-                Track your portfolio with live holdings and transaction history.
-              </h1>
-              <p className="text-base leading-7 text-muted-foreground">
-                Sign in to create your home-currency portfolio, record buys and
-                sells, and refresh current market values from cached or live data.
-              </p>
+      <main className="page-wrap px-1 py-3 md:px-0 md:py-4">
+        <section className="workspace-frame flex min-h-[calc(100svh-1.5rem)] items-center justify-center rounded-[2rem] px-4 py-10 md:rounded-[2.15rem] md:px-8">
+          <div className="app-shell grid w-full max-w-4xl gap-6 rounded-[1.8rem] p-8 md:p-10">
+            <p className="eyebrow">Authentication</p>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl space-y-3">
+                <h1 className="text-4xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
+                  Track your portfolio with live holdings and transaction history.
+                </h1>
+                <p className="text-sm leading-7 text-muted-foreground md:text-base">
+                  Sign in to create your home-currency portfolio, record buys and
+                  sells, and refresh current market values from cached or live data.
+                </p>
+              </div>
+              <SignInButton mode="modal">
+                <Button size="lg" className="h-12 rounded-2xl px-5">
+                  <ShieldCheck className="size-4" />
+                  Sign in
+                </Button>
+              </SignInButton>
             </div>
-            <SignInButton mode="modal">
-              <Button className="h-11 rounded-xl px-5">
-                <ShieldCheck className="size-4" />
-                Sign in
-              </Button>
-            </SignInButton>
           </div>
         </section>
       </main>
@@ -101,16 +107,18 @@ function ConfiguredPortfolioGate({ children }: PortfolioGateProps) {
   if (portfolio === null) {
     return (
       <>
-        <main className="page-wrap flex min-h-[calc(100svh-4rem)] items-center justify-center px-4 py-12">
-          <section className="app-shell max-w-2xl rounded-[2rem] p-8 text-center">
-            <p className="eyebrow">First Sign-In</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              Let’s set up your portfolio.
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Pick your home currency first. The app will create your default
-              portfolio immediately after.
-            </p>
+        <main className="page-wrap px-1 py-3 md:px-0 md:py-4">
+          <section className="workspace-frame flex min-h-[calc(100svh-1.5rem)] items-center justify-center rounded-[2rem] px-4 py-10 md:rounded-[2.15rem]">
+            <div className="app-shell max-w-2xl rounded-[1.8rem] p-8 text-center">
+              <p className="eyebrow">First Sign-In</p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground">
+                Let’s set up your portfolio.
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                Pick your home currency first. The app will create your default
+                portfolio immediately after.
+              </p>
+            </div>
           </section>
         </main>
         <HomeCurrencyDialog
