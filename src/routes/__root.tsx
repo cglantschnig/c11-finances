@@ -21,11 +21,28 @@ export const Route = createRootRoute({
       {
         title: 'c11 Finances',
       },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'icon',
+        href: '/favicon.ico',
+      },
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: '/apple-touch-icon.png',
+      },
+      {
+        rel: 'manifest',
+        href: '/manifest.json',
       },
     ],
   }),
