@@ -5,8 +5,8 @@ Welcome to your new TanStack Start app!
 To run this application:
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun dev
 ```
 
 # Building For Production
@@ -14,7 +14,7 @@ pnpm dev
 To build this application for production:
 
 ```bash
-pnpm build
+bun run build
 ```
 
 TanStack Start is configured with Nitro so the server build can run on Vercel.
@@ -24,7 +24,7 @@ TanStack Start is configured with Nitro so the server build can run on Vercel.
 This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
 
 ```bash
-pnpm test
+bun run test
 ```
 
 ## Styling
@@ -38,13 +38,13 @@ If you prefer not to use Tailwind CSS:
 1. Remove the demo pages in `src/routes/demo/`
 2. Replace the Tailwind import in `src/styles.css` with your own styles
 3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
+4. Uninstall the packages: `bun remove @tailwindcss/vite tailwindcss`
 
 
 ## Setting up Convex
 
-- Set the `VITE_CONVEX_URL` and `CONVEX_DEPLOYMENT` environment variables in your `.env.local`. (Or run `pnpm dlx convex init` to set them automatically.)
-- Run `pnpm dlx convex dev` to start the Convex server.
+- Set the `VITE_CONVEX_URL` and `CONVEX_DEPLOYMENT` environment variables in your `.env.local`. (Or run `bunx convex init` to set them automatically.)
+- Run `bunx convex dev` to start the Convex server.
 
 ## Deploying To Vercel
 

@@ -1,20 +1,28 @@
+import { useAuth } from '@clerk/clerk-react'
+import { ConvexReactClient } from 'convex/react'
 import { ConvexProvider } from 'convex/react'
-import { ConvexQueryClient } from '@convex-dev/react-query'
+import { ConvexProviderWithClerk } from 'convex/react-clerk'
+import { convexUrl } from './config'
+import { hasClerkPublishableKey } from '../clerk/config'
 
-const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL
-if (!CONVEX_URL) {
-  console.error('missing envar CONVEX_URL')
-}
-const convexQueryClient = new ConvexQueryClient(CONVEX_URL)
+const convexClient = convexUrl ? new ConvexReactClient(convexUrl) : null
 
 export default function AppConvexProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
+  if (!convexClient) {
+    return children
+  }
+
+  if (!hasClerkPublishableKey) {
+    return <ConvexProvider client={convexClient}>{children}</ConvexProvider>
+  }
+
   return (
-    <ConvexProvider client={convexQueryClient.convexClient}>
+    <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
       {children}
-    </ConvexProvider>
+    </ConvexProviderWithClerk>
   )
 }

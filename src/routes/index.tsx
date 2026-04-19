@@ -1,86 +1,96 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { ArrowRight, ChartColumnIncreasing, ShieldCheck } from 'lucide-react'
+import { Button } from '#/components/ui/button'
+import { hasClerkPublishableKey } from '#/integrations/clerk/config'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  ssr: false,
+  component: HomePage,
+})
 
-function App() {
+function HomePage() {
+  const signedOutPrimaryAction = hasClerkPublishableKey ? (
+    <SignInButton mode="modal">
+      <Button className="h-11 rounded-xl px-5">
+        <ShieldCheck className="size-4" />
+        Sign in to begin
+      </Button>
+    </SignInButton>
+  ) : (
+    <Button asChild variant="outline" className="h-11 rounded-xl px-5">
+      <Link to="/dashboard">Open setup state</Link>
+    </Button>
+  )
+
   return (
-    <main className="page-wrap px-4 pb-8 pt-14">
-      <section className="island-shell rise-in relative overflow-hidden rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14">
-        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(79,184,178,0.32),transparent_66%)]" />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(47,106,74,0.18),transparent_66%)]" />
-        <p className="island-kicker mb-3">TanStack Start Base Template</p>
-        <h1 className="display-title mb-5 max-w-3xl text-4xl leading-[1.02] font-bold tracking-tight text-[var(--sea-ink)] sm:text-6xl">
-          Start simple, ship quickly.
-        </h1>
-        <p className="mb-8 max-w-2xl text-base text-[var(--sea-ink-soft)] sm:text-lg">
-          This base starter intentionally keeps things light: two routes, clean
-          structure, and the essentials you need to build from scratch.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="/about"
-            className="rounded-full border border-[rgba(50,143,151,0.3)] bg-[rgba(79,184,178,0.14)] px-5 py-2.5 text-sm font-semibold text-[var(--lagoon-deep)] no-underline transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)]"
-          >
-            About This Starter
-          </a>
-          <a
-            href="https://tanstack.com/router"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-[rgba(23,58,64,0.2)] bg-white/50 px-5 py-2.5 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5 hover:border-[rgba(23,58,64,0.35)]"
-          >
-            Router Guide
-          </a>
+    <main className="page-wrap flex min-h-[calc(100svh-4rem)] items-center px-4 py-10 md:px-6">
+      <section className="app-shell relative w-full overflow-hidden rounded-[2rem] p-8 md:p-12">
+        <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-6">
+            <p className="eyebrow">Portfolio Tracker</p>
+            <div className="space-y-4">
+              <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-foreground md:text-6xl">
+                Record transactions, cache live prices, and monitor open positions in one dark workspace.
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+                F11 Finances keeps a simple transaction ledger, converts values
+                into your home currency, and refreshes holdings from cached or
+                live market data.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {hasClerkPublishableKey ? (
+                <>
+                  <SignedIn>
+                    <Button asChild className="h-11 rounded-xl px-5">
+                      <Link to="/dashboard">
+                        Open dashboard
+                        <ArrowRight className="size-4" />
+                      </Link>
+                    </Button>
+                  </SignedIn>
+
+                  <SignedOut>{signedOutPrimaryAction}</SignedOut>
+                </>
+              ) : (
+                signedOutPrimaryAction
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-[1.75rem] border border-border bg-muted/25 p-6">
+              <div className="mb-4 inline-flex rounded-2xl bg-primary/14 p-3 text-primary">
+                <ChartColumnIncreasing className="size-5" />
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">
+                Basic v1 workflow
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Set your home currency, add transactions with historical FX, and
+                review holdings and raw transaction history on separate screens.
+              </p>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-border bg-card/60 p-6">
+              <p className="eyebrow">What ships now</p>
+              <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-border bg-background/30 px-4 py-3">
+                  Cached holdings with stale price indicators.
+                </div>
+                <div className="rounded-2xl border border-border bg-background/30 px-4 py-3">
+                  Transaction log with inline delete confirmation.
+                </div>
+                <div className="rounded-2xl border border-border bg-background/30 px-4 py-3">
+                  Auto-fetched historical FX for multi-currency entries.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
-
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          [
-            'Type-Safe Routing',
-            'Routes and links stay in sync across every page.',
-          ],
-          [
-            'Server Functions',
-            'Call server code from your UI without creating API boilerplate.',
-          ],
-          [
-            'Streaming by Default',
-            'Ship progressively rendered responses for faster experiences.',
-          ],
-          [
-            'Tailwind Native',
-            'Design quickly with utility-first styling and reusable tokens.',
-          ],
-        ].map(([title, desc], index) => (
-          <article
-            key={title}
-            className="island-shell feature-card rise-in rounded-2xl p-5"
-            style={{ animationDelay: `${index * 90 + 80}ms` }}
-          >
-            <h2 className="mb-2 text-base font-semibold text-[var(--sea-ink)]">
-              {title}
-            </h2>
-            <p className="m-0 text-sm text-[var(--sea-ink-soft)]">{desc}</p>
-          </article>
-        ))}
-      </section>
-
-      <section className="island-shell mt-8 rounded-2xl p-6">
-        <p className="island-kicker mb-2">Quick Start</p>
-        <ul className="m-0 list-disc space-y-2 pl-5 text-sm text-[var(--sea-ink-soft)]">
-          <li>
-            Edit <code>src/routes/index.tsx</code> to customize the home page.
-          </li>
-          <li>
-            Update <code>src/components/Header.tsx</code> and{' '}
-            <code>src/components/Footer.tsx</code> for brand links.
-          </li>
-          <li>
-            Add routes in <code>src/routes</code> and tweak visual tokens in{' '}
-            <code>src/styles.css</code>.
-          </li>
-        </ul>
       </section>
     </main>
   )

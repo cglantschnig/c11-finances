@@ -30,9 +30,9 @@ Branch: main
 
 ## Design System
 
-- [ ] **Install shadcn/ui** — Run `pnpm dlx shadcn@latest init` and choose "Dark" theme. Tailwind v4 is already installed. Initialize with CSS variables. Add components needed for v1: `pnpm dlx shadcn@latest add table button input select dialog sheet skeleton badge toast tooltip`. This creates `src/components/ui/` and `components.json`.
+- [ ] **Install shadcn/ui** — Run `bunx shadcn@latest init` and choose "Dark" theme. Tailwind v4 is already installed. Initialize with CSS variables. Add components needed for v1: `bunx shadcn@latest add table button input select dialog sheet skeleton badge toast tooltip`. This creates `src/components/ui/` and `components.json`.
 - [ ] **Design tokens via shadcn CSS vars** — After shadcn init, override the generated CSS variables in `src/styles.css` to match the dark palette: `--background: 222 47% 7%` (≈`#0d0d14`), `--card: 222 40% 10%` (≈`#151520`), `--border: 222 30% 14%` (≈`#1e1e2e`), `--primary: 239 84% 67%` (≈`#6366f1`), `--muted-foreground: 220 9% 46%` (≈`#6b7280`). Also add custom tokens for positive/negative/warning using Tailwind CSS vars (these are not in shadcn's default set).
-- [ ] **Geist font** — Install `geist` package (`pnpm add geist`). Import in `src/styles.css`. Set `font-variant-numeric: tabular-nums` via a Tailwind utility class `tabular-nums` on all price/percentage cells.
+- [ ] **Geist font** — Install `geist` package (`bun add geist`). Import in `src/styles.css`. Set `font-variant-numeric: tabular-nums` via a Tailwind utility class `tabular-nums` on all price/percentage cells.
 - [ ] **Mobile layout** — On ≤ 768px: sidebar collapses. Use shadcn `Sheet` component for the slide-over drawer. "Add Transaction" button in top-right of mobile header. Table on tablet (≤ 1024px): use Tailwind responsive classes to hide QTY, AVG COST, P&L absolute columns.
 - [ ] **A11y baseline** — ARIA labels on all icon-only sidebar buttons. Keyboard nav: Tab through table rows, Enter to expand, Esc to close modals. shadcn Dialog and Sheet handle focus-trap and Esc key automatically.
 
@@ -49,7 +49,7 @@ Branch: main
 | Form inputs (ticker, qty, price) | `Input` |
 | Selects (asset type, currency, buy/sell) | `Select`, `SelectTrigger`, `SelectContent`, `SelectItem` |
 | Date picker | `Input` type="date" (native for v1; upgrade to `Popover` + calendar in v2) |
-| Success toast | `Sonner` (shadcn's toast, via `pnpm dlx shadcn@latest add sonner`) |
+| Success toast | `Sonner` (shadcn's toast, via `bunx shadcn@latest add sonner`) |
 | Stale price indicator | `Badge` (variant: outline, amber color override) + `Tooltip` |
 | Icons (sidebar, delete, warning) | `lucide-react` (already installed) |
 
