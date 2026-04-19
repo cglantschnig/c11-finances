@@ -137,7 +137,6 @@ function TransactionsScreen({ portfolio }: { portfolio: Portfolio }) {
       <PortfolioAppShell
         title="Transactions"
         onOpenAddTransaction={() => setAddDialogOpen(true)}
-        portfolio={portfolio}
       >
         <div className="space-y-6">
           <div className="space-y-3">
