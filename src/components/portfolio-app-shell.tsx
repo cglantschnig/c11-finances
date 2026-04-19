@@ -48,7 +48,7 @@ function Brand() {
   return (
     <Link
       to="/dashboard"
-      className="flex items-center gap-3 rounded-lg border border-sidebar-border/80 bg-sidebar-primary/10 px-3 py-3 no-underline"
+      className="flex items-center gap-3 rounded-lg px-3 py-3 no-underline"
     >
       <Logo className="size-11" />
       <div className="min-w-0">
