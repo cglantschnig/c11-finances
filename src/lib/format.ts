@@ -5,6 +5,7 @@ export function formatCurrency(
 ) {
   return new Intl.NumberFormat('en-US', {
     currency,
+    currencyDisplay: 'narrowSymbol',
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
     style: 'currency',

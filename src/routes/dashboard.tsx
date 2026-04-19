@@ -73,6 +73,30 @@ function StaleBadge() {
   )
 }
 
+function formatLastUpdatedAt(timestamp: number) {
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(timestamp)
+}
+
+function LiveBadge({ lastUpdatedAt }: { lastUpdatedAt: number | null }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          Live
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent sideOffset={8}>
+        {lastUpdatedAt === null
+          ? 'Last update time unavailable.'
+          : `Last updated at ${formatLastUpdatedAt(lastUpdatedAt)}.`}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 function HoldingsSkeleton() {
   return (
     <>
@@ -112,13 +136,11 @@ function holdingsStatusText(
   isRefreshing: boolean,
   progressCount: number,
   refreshError: string | null,
-  didRefresh: boolean,
 ) {
   if (refreshError) return refreshError
   if (isRefreshing) return `Refreshing ${progressCount}/${snapshot?.openPositionsCount ?? 0}`
-  if (didRefresh) return 'Updated just now'
   if (snapshot?.anyStale) return 'Cached prices'
-  return 'Live'
+  return null
 }
 
 function DashboardRoute() {
@@ -212,8 +234,19 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     isRefreshing,
     progressCount,
     refreshError,
-    refreshedHoldings !== null,
   )
+  const lastUpdatedAt = useMemo(() => {
+    const fetchedAtValues =
+      snapshot?.items
+        .map((item) => item.fetchedAt)
+        .filter((value): value is number => value !== null) ?? []
+
+    if (fetchedAtValues.length === 0) {
+      return null
+    }
+
+    return Math.max(...fetchedAtValues)
+  }, [snapshot])
 
   const totalValueCurrency = userSettings?.currency ?? portfolio.homeCurrency
 
@@ -291,10 +324,17 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                   {snapshot?.items.length ?? 0} positions
                   {' · '}
                   total in {resolvedTotalValueCurrency}
-                  {' · '}
-                  holdings in {portfolio.homeCurrency}
-                  {' · '}
-                  {statusText}
+                  {statusText ? (
+                    <>
+                      {' · '}
+                      {statusText}
+                    </>
+                  ) : lastUpdatedAt !== null ? (
+                    <>
+                      {' · '}
+                      <LiveBadge lastUpdatedAt={lastUpdatedAt} />
+                    </>
+                  ) : null}
                   {snapshot?.anyStale ? <> · <StaleBadge /></> : null}
                   {snapshot?.totalValueIsPartial ? <> · <Badge variant="outline">Partial</Badge></> : null}
                   {totalValueFxError ? <> · FX unavailable</> : null}
