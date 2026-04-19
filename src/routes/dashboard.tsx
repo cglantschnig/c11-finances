@@ -303,6 +303,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
       <PortfolioAppShell
         title="Portfolio"
         onOpenAddTransaction={() => setAddDialogOpen(true)}
+        showMobileHeaderModeToggle={false}
       >
         <div className="space-y-8">
 
@@ -443,11 +444,14 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                           <CardContent className="grid gap-4 pt-3">
                             <div className="flex items-start justify-between gap-3">
                               <p className="text-lg font-medium text-foreground">{holding.ticker}</p>
-                              <p className="tabular-nums text-sm text-muted-foreground">
-                                {formatQuantity(holding.quantity)} units
-                              </p>
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Units</p>
+                                <p className="mt-1 tabular-nums text-foreground">
+                                  {formatQuantity(holding.quantity)}
+                                </p>
+                              </div>
                               <div>
                                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Average price</p>
                                 <p className="mt-1 tabular-nums text-foreground">

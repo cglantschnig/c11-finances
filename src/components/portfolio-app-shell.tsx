@@ -29,6 +29,7 @@ import {
 type PortfolioAppShellProps = {
   children: React.ReactNode
   onOpenAddTransaction: () => void
+  showMobileHeaderModeToggle?: boolean
   title: string
 }
 
@@ -98,6 +99,7 @@ function Navigation({
 export default function PortfolioAppShell({
   children,
   onOpenAddTransaction,
+  showMobileHeaderModeToggle = true,
   title,
 }: PortfolioAppShellProps) {
   return (
@@ -155,7 +157,9 @@ export default function PortfolioAppShell({
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <ModeToggle className="md:hidden" />
+              {showMobileHeaderModeToggle ? (
+                <ModeToggle className="md:hidden" />
+              ) : null}
               <Button size="sm" onClick={onOpenAddTransaction}>
                 <IconPlus className="size-4" />
                 <span className="hidden sm:inline">Add transaction</span>
