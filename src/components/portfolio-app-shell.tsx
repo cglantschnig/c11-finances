@@ -115,15 +115,24 @@ export default function PortfolioAppShell({
         <SidebarSeparator />
 
         <SidebarFooter className="p-4">
-          <div className="flex items-center justify-between rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-2">
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">Theme</p>
-              <p className="text-xs text-sidebar-foreground/70">
-                Light or dark
-              </p>
-            </div>
-            <ModeToggle />
-          </div>
+          <ModeToggle
+            variant="ghost"
+            size="default"
+            className="h-auto w-full justify-between rounded-lg px-3 py-2 text-left hover:bg-sidebar-accent/70"
+          >
+            {({ icon }) => (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    Theme
+                  </p>
+                </div>
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-sidebar-border/80">
+                  {icon}
+                </span>
+              </>
+            )}
+          </ModeToggle>
 
           <HeaderUser />
         </SidebarFooter>
