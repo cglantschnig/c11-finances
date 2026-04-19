@@ -80,7 +80,8 @@ function SideToggle({
               color: 'oklch(0.52 0.2 25.331)',
             }
       }
-      className="h-9 cursor-pointer border px-4 text-[13px] font-semibold tracking-[0.03em] whitespace-nowrap transition-all duration-150"
+      aria-label={isBuy ? 'Buy (click to switch to Sell)' : 'Sell (click to switch to Buy)'}
+      className="h-9 cursor-pointer border px-4 text-[13px] font-semibold tracking-[0.03em] whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
     >
       {isBuy ? '▲ Buy' : '▼ Sell'}
     </button>
@@ -152,7 +153,8 @@ export default function AddTransactionDialog({
     }
   }, [form.date, open, portfolio.homeCurrency, resolvedNativeCurrency])
 
-  const showFxField = resolvedNativeCurrency !== portfolio.homeCurrency
+  const showFxField =
+    resolvedNativeCurrency.length === 3 && resolvedNativeCurrency !== portfolio.homeCurrency
   const canSubmit = useMemo(
     () =>
       Boolean(
@@ -160,9 +162,10 @@ export default function AddTransactionDialog({
           resolvedNativeCurrency.length === 3 &&
           form.quantity &&
           form.pricePerUnit &&
-          form.date,
+          form.date &&
+          (!showFxField || (Number(form.fxRate) > 0 && form.fxRate !== '')),
       ),
-    [form.date, form.pricePerUnit, form.quantity, form.ticker, resolvedNativeCurrency],
+    [form.date, form.fxRate, form.pricePerUnit, form.quantity, form.ticker, resolvedNativeCurrency, showFxField],
   )
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -265,6 +268,7 @@ export default function AddTransactionDialog({
                     className="h-9 flex-1 rounded-r-none border-r-0 focus-visible:z-10"
                   />
                   <select
+                    aria-label="Currency"
                     value={form.nativeCurrency}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -272,7 +276,7 @@ export default function AddTransactionDialog({
                         nativeCurrency: event.target.value,
                       }))
                     }
-                    className="h-9 w-[68px] shrink-0 border border-input bg-transparent px-2 text-[12px] text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
+                    className="h-9 w-[68px] shrink-0 border border-input bg-background px-2 text-[12px] text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/50 focus:border-ring"
                   >
                     {COMMON_CURRENCIES.map((currency) => (
                       <option key={currency} value={currency}>
