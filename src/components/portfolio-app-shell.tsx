@@ -6,6 +6,7 @@ import {
 } from '@tabler/icons-react'
 import Logo from '#/components/logo'
 import ModeToggle from '#/components/mode-toggle'
+import UserCurrencySelect from '#/components/user-currency-select'
 import HeaderUser from '#/integrations/clerk/header-user'
 import { Button } from '#/components/ui/button'
 import {
@@ -115,6 +116,8 @@ export default function PortfolioAppShell({
         <SidebarSeparator />
 
         <SidebarFooter className="p-4">
+          <UserCurrencySelect />
+
           <ModeToggle
             variant="ghost"
             size="default"

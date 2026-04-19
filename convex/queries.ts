@@ -23,6 +23,8 @@ type HoldingSnapshot = {
   value: number | null
 }
 
+const DEFAULT_USER_CURRENCY = 'EUR' as const
+
 async function getViewerTokenIdentifier(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity()
   return identity?.tokenIdentifier ?? null
@@ -134,6 +136,27 @@ export const listTransactions = query({
 
     await getOwnedPortfolio(ctx, args.portfolioId, tokenIdentifier)
     return await listPortfolioTransactions(ctx, args.portfolioId)
+  },
+})
+
+export const getUserSettings = query({
+  args: {},
+  handler: async (ctx) => {
+    const tokenIdentifier = await getViewerTokenIdentifier(ctx)
+    if (!tokenIdentifier) {
+      return null
+    }
+
+    const settings = await ctx.db
+      .query('userSettings')
+      .withIndex('by_user_token_identifier', (query) =>
+        query.eq('userTokenIdentifier', tokenIdentifier),
+      )
+      .unique()
+
+    return {
+      currency: settings?.currency ?? DEFAULT_USER_CURRENCY,
+    }
   },
 })
 

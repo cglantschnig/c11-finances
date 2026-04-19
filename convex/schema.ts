@@ -28,4 +28,13 @@ export default defineSchema({
   })
     .index('by_portfolio_id_and_date', ['portfolioId', 'date'])
     .index('by_portfolio_id_and_ticker', ['portfolioId', 'ticker']),
+  userSettings: defineTable({
+    currency: v.union(
+      v.literal('EUR'),
+      v.literal('USD'),
+      v.literal('BHT'),
+      v.literal('PHP'),
+    ),
+    userTokenIdentifier: v.string(),
+  }).index('by_user_token_identifier', ['userTokenIdentifier']),
 })
