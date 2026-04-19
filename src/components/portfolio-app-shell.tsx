@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import {
   IconChartHistogram,
-  IconExchange,
+  IconList,
   IconPlus,
 } from '@tabler/icons-react'
 import Logo from '#/components/logo'
 import ModeToggle from '#/components/mode-toggle'
+import UserCurrencySelect from '#/components/user-currency-select'
 import HeaderUser from '#/integrations/clerk/header-user'
 import { Button } from '#/components/ui/button'
 import {
@@ -38,7 +39,7 @@ const navigationItems = [
     to: '/dashboard' as const,
   },
   {
-    icon: IconExchange,
+    icon: IconList,
     label: 'Transactions',
     to: '/transactions' as const,
   },
@@ -48,7 +49,7 @@ function Brand() {
   return (
     <Link
       to="/dashboard"
-      className="flex items-center gap-3 rounded-lg border border-sidebar-border/80 bg-sidebar-primary/10 px-3 py-3 no-underline"
+      className="flex items-center gap-3 rounded-lg px-3 py-3 no-underline"
     >
       <Logo className="size-11" />
       <div className="min-w-0">
@@ -115,25 +116,28 @@ export default function PortfolioAppShell({
         <SidebarSeparator />
 
         <SidebarFooter className="p-4">
-          <div className="flex items-center justify-between rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-2">
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">Theme</p>
-              <p className="text-xs text-sidebar-foreground/70">
-                Light or dark
-              </p>
-            </div>
-            <ModeToggle />
-          </div>
+          <UserCurrencySelect />
 
-          <div className="flex items-center justify-between rounded-lg border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-3">
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">Account</p>
-              <p className="text-xs text-sidebar-foreground/70">
-                Manage your session
-              </p>
-            </div>
-            <HeaderUser />
-          </div>
+          <ModeToggle
+            variant="ghost"
+            size="default"
+            className="h-auto w-full justify-between rounded-lg px-3 py-2 text-left hover:bg-sidebar-accent/70"
+          >
+            {({ icon }) => (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    Theme
+                  </p>
+                </div>
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-sidebar-border/80">
+                  {icon}
+                </span>
+              </>
+            )}
+          </ModeToggle>
+
+          <HeaderUser />
         </SidebarFooter>
       </Sidebar>
 

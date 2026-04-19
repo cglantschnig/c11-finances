@@ -92,9 +92,48 @@ export const createPortfolio = mutation({
       return existing._id
     }
 
-    return await ctx.db.insert('portfolios', {
+    const portfolioId = await ctx.db.insert('portfolios', {
       homeCurrency,
       name: args.name?.trim() || 'My Portfolio',
+      userTokenIdentifier: tokenIdentifier,
+    })
+
+    await ctx.db.insert('userSettings', {
+      currency: 'EUR',
+      userTokenIdentifier: tokenIdentifier,
+    })
+
+    return portfolioId
+  },
+})
+
+export const setUserCurrency = mutation({
+  args: {
+    currency: v.union(
+      v.literal('EUR'),
+      v.literal('USD'),
+      v.literal('THB'),
+      v.literal('PHP'),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await requireViewerTokenIdentifier(ctx)
+    const existing = await ctx.db
+      .query('userSettings')
+      .withIndex('by_user_token_identifier', (query) =>
+        query.eq('userTokenIdentifier', tokenIdentifier),
+      )
+      .unique()
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        currency: args.currency,
+      })
+      return existing._id
+    }
+
+    return await ctx.db.insert('userSettings', {
+      currency: args.currency,
       userTokenIdentifier: tokenIdentifier,
     })
   },

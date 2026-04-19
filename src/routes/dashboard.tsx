@@ -20,6 +20,7 @@ import {
   formatPercent,
   formatQuantity,
 } from '#/lib/format'
+import { fetchLatestFxRate } from '#/lib/fx'
 import { cn } from '#/lib/utils'
 import { refreshHoldings } from '#/lib/server/refresh-holdings'
 import { Badge } from '#/components/ui/badge'
@@ -132,12 +133,15 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
   const cachedHoldings = useQuery(api.queries.getCachedHoldings, {
     portfolioId: portfolio._id,
   })
+  const userSettings = useQuery(api.queries.getUserSettings, {})
   const refreshHoldingsFn = useServerFn(refreshHoldings)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [refreshedHoldings, setRefreshedHoldings] = useState<HoldingsSnapshot | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [progressCount, setProgressCount] = useState(0)
+  const [totalValueFxRate, setTotalValueFxRate] = useState<number | null>(1)
+  const [totalValueFxError, setTotalValueFxError] = useState<string | null>(null)
 
   const needsRefresh = Boolean(
     cachedHoldings &&
@@ -211,6 +215,54 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     refreshedHoldings !== null,
   )
 
+  const totalValueCurrency = userSettings?.currency ?? portfolio.homeCurrency
+
+  useEffect(() => {
+    if (totalValueCurrency === portfolio.homeCurrency) {
+      setTotalValueFxRate(1)
+      setTotalValueFxError(null)
+      return
+    }
+
+    const abortController = new AbortController()
+
+    setTotalValueFxRate(null)
+    setTotalValueFxError(null)
+
+    void fetchLatestFxRate({
+      base: portfolio.homeCurrency,
+      quote: totalValueCurrency,
+      signal: abortController.signal,
+    })
+      .then((rate) => {
+        setTotalValueFxRate(rate)
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        setTotalValueFxError(
+          error instanceof Error ? error.message : 'Unable to load FX rate.',
+        )
+      })
+
+    return () => {
+      abortController.abort()
+    }
+  }, [portfolio.homeCurrency, totalValueCurrency])
+
+  const resolvedTotalValueCurrency =
+    totalValueFxRate === null ? portfolio.homeCurrency : totalValueCurrency
+  const displayedTotalValue =
+    (snapshot?.totalValue ?? 0) * (totalValueFxRate ?? 1)
+  const isTotalValueLoading =
+    !isInitialLoad &&
+    snapshot !== null &&
+    totalValueCurrency !== portfolio.homeCurrency &&
+    totalValueFxRate === null &&
+    totalValueFxError === null
+
   return (
     <>
       <PortfolioAppShell
@@ -225,11 +277,11 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
               Total value
             </p>
             <div className="mt-2">
-              {isInitialLoad ? (
+              {isInitialLoad || isTotalValueLoading ? (
                 <Skeleton className="h-14 w-56 rounded-full" />
               ) : (
                 <p className="font-heading text-5xl tabular-nums text-foreground sm:text-6xl">
-                  {formatCurrency(snapshot?.totalValue ?? 0, portfolio.homeCurrency)}
+                  {formatCurrency(displayedTotalValue, resolvedTotalValueCurrency)}
                 </p>
               )}
             </div>
@@ -238,11 +290,14 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                 <>
                   {snapshot?.items.length ?? 0} positions
                   {' · '}
-                  {portfolio.homeCurrency}
+                  total in {resolvedTotalValueCurrency}
+                  {' · '}
+                  holdings in {portfolio.homeCurrency}
                   {' · '}
                   {statusText}
                   {snapshot?.anyStale ? <> · <StaleBadge /></> : null}
                   {snapshot?.totalValueIsPartial ? <> · <Badge variant="outline">Partial</Badge></> : null}
+                  {totalValueFxError ? <> · FX unavailable</> : null}
                 </>
               )}
             </p>
