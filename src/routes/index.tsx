@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Navigate, createFileRoute, Link } from '@tanstack/react-router'
 import { IconArrowRight, IconMoon, IconSun } from '@tabler/icons-react'
 import { useTheme } from 'next-themes'
 import Logo from '#/components/logo'
@@ -61,6 +61,23 @@ const LANDING_THEME = {
 } as const
 
 function HomePage() {
+  if (hasClerkPublishableKey) {
+    return (
+      <>
+        <SignedIn>
+          <Navigate to="/dashboard" replace />
+        </SignedIn>
+        <SignedOut>
+          <LandingPage />
+        </SignedOut>
+      </>
+    )
+  }
+
+  return <LandingPage />
+}
+
+function LandingPage() {
   const { resolvedTheme, setTheme } = useTheme()
   const palette =
     resolvedTheme === 'light' ? LANDING_THEME.light : LANDING_THEME.dark
