@@ -5,13 +5,23 @@ import {
   useClerk,
   useUser,
 } from '@clerk/clerk-react'
-import { IconLogin2 } from '@tabler/icons-react'
+import {
+  IconLogin2,
+  IconLogout2,
+  IconSettings,
+} from '@tabler/icons-react'
 import { hasClerkPublishableKey } from './config'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from '#/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import { cn } from '#/lib/utils'
 
 const accountRowClassName =
@@ -80,14 +90,26 @@ function SignedInAccountRow() {
     : 'Loading...'
 
   return (
-    <button
-      type="button"
-      className={accountRowClassName}
-      disabled={!isLoaded}
-      onClick={() => clerk.openUserProfile()}
-    >
-      <AccountRowContent label={label} imageUrl={user?.imageUrl} />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className={accountRowClassName} disabled={!isLoaded}>
+          <AccountRowContent label={label} imageUrl={user?.imageUrl} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" side="top" className="w-56">
+        <DropdownMenuItem onClick={() => clerk.openUserProfile()}>
+          <IconSettings className="size-4" />
+          <span>Manage account</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => void clerk.signOut({ redirectUrl: '/' })}
+        >
+          <IconLogout2 className="size-4" />
+          <span>Log out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
