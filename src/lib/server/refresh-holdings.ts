@@ -1,10 +1,10 @@
-import { auth } from '@clerk/tanstack-react-start/server'
 import { createServerFn } from '@tanstack/react-start'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { resolveAssetTypeForPricing } from '../../../shared/asset-type'
 import { getCoinGeckoIdForTicker } from '../../../shared/crypto-assets'
+import { getAuthenticatedConvexClient } from '#/lib/server/convex-client.server'
+import { getCachedLatestFxRates } from '#/lib/server/fx-cache.server'
 
 class AlphaVantageError extends Error {
   constructor(message: string) {
@@ -20,33 +20,12 @@ class CoinGeckoError extends Error {
   }
 }
 
-function getConvexUrl() {
-  const url = process.env.VITE_CONVEX_URL
-  if (!url) {
-    throw new Error('Missing VITE_CONVEX_URL.')
-  }
-  return url
-}
-
 function getAlphaVantageApiKey() {
   const apiKey = process.env.ALPHA_VANTAGE_API_KEY
   if (!apiKey) {
     throw new Error('Missing ALPHA_VANTAGE_API_KEY.')
   }
   return apiKey
-}
-
-async function getConvexToken() {
-  const authState = await auth()
-  if (!authState.isAuthenticated) {
-    throw new Error('You must be signed in.')
-  }
-
-  if (authState.sessionClaims?.aud === 'convex') {
-    return await authState.getToken()
-  }
-
-  return await authState.getToken({ template: 'convex' })
 }
 
 async function fetchAlphaVantage(url: URL) {
@@ -148,42 +127,10 @@ async function fetchCryptoPrice(ticker: string, currency: string) {
   return price
 }
 
-async function fetchFxRate(fromCurrency: string, toCurrency: string) {
-  if (fromCurrency === toCurrency) {
-    return 1
-  }
-
-  const url = new URL('https://api.frankfurter.dev/v1/latest')
-  url.searchParams.set('base', fromCurrency)
-  url.searchParams.set('symbols', toCurrency)
-
-  const response = await fetch(url, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error(`FX request failed with ${response.status}.`)
-  }
-
-  const payload = (await response.json()) as {
-    rates?: Record<string, number>
-  }
-  const rate = payload.rates?.[toCurrency]
-
-  if (!Number.isFinite(rate) || !rate || rate <= 0) {
-    throw new Error(`No FX rate returned for ${fromCurrency}/${toCurrency}.`)
-  }
-
-  return rate
-}
-
 export const refreshHoldings = createServerFn({ method: 'POST' })
   .inputValidator((data: { portfolioId: Id<'portfolios'> }) => data)
   .handler(async ({ data }) => {
-    const token = await getConvexToken()
-    if (!token) {
-      throw new Error('Unable to authenticate Convex request.')
-    }
-
-    const convex = new ConvexHttpClient(getConvexUrl())
-    convex.setAuth(token)
+    const convex = await getAuthenticatedConvexClient()
 
     const snapshot = await convex.query(api.queries.getCachedHoldings, {
       portfolioId: data.portfolioId,
@@ -200,6 +147,27 @@ export const refreshHoldings = createServerFn({ method: 'POST' })
       return snapshot
     }
 
+    const equityFxRates = await getCachedLatestFxRates({
+      baseCurrencies: [
+        ...new Set(
+          snapshot.items
+            .filter((item) => item.nativeCurrency !== snapshot.portfolio.homeCurrency)
+            .filter((item) => {
+              if (item.cacheStatus === 'fresh' && !item.needsPriceRefresh) {
+                return false
+              }
+
+              return (
+                resolveAssetTypeForPricing(item.assetType, item.ticker) === 'equity'
+              )
+            })
+            .map((item) => item.nativeCurrency),
+        ),
+      ],
+      convex,
+      quoteCurrency: snapshot.portfolio.homeCurrency,
+    })
+
     for (const item of snapshot.items) {
       if (item.cacheStatus === 'fresh' && !item.needsPriceRefresh) {
         continue
@@ -214,10 +182,7 @@ export const refreshHoldings = createServerFn({ method: 'POST' })
           pricingAssetType === 'crypto'
             ? await fetchCryptoPrice(item.ticker, snapshot.portfolio.homeCurrency)
             : (await fetchEquityPrice(item.ticker)) *
-              (await fetchFxRate(
-                item.nativeCurrency,
-                snapshot.portfolio.homeCurrency,
-              ))
+              (equityFxRates[item.nativeCurrency] ?? 1)
 
         await convex.mutation(api.mutations.upsertPriceCache, {
           fetchedAt: Date.now(),

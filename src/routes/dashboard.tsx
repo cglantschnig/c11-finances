@@ -20,8 +20,8 @@ import {
   formatPercent,
   formatQuantity,
 } from '#/lib/format'
-import { fetchLatestFxRate } from '#/lib/fx'
 import { cn } from '#/lib/utils'
+import { getLatestFxRates } from '#/lib/server/fx-cache.functions'
 import { refreshHoldings } from '#/lib/server/refresh-holdings'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -181,18 +181,17 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     portfolioId: portfolio._id,
   })
   const userSettings = useQuery(api.queries.getUserSettings, {})
+  const getLatestFxRatesFn = useServerFn(getLatestFxRates)
   const refreshHoldingsFn = useServerFn(refreshHoldings)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [refreshedHoldings, setRefreshedHoldings] = useState<HoldingsSnapshot | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [progressCount, setProgressCount] = useState(0)
-  const [totalValueFxRate, setTotalValueFxRate] = useState<number | null>(1)
-  const [totalValueFxError, setTotalValueFxError] = useState<string | null>(null)
-  const [latestDisplayFxRates, setLatestDisplayFxRates] = useState<
+  const [displayFxRates, setDisplayFxRates] = useState<
     Record<string, number> | null
   >({})
-  const [latestDisplayFxError, setLatestDisplayFxError] = useState<string | null>(null)
+  const [displayFxError, setDisplayFxError] = useState<string | null>(null)
 
   const needsRefresh = Boolean(
     cachedHoldings &&
@@ -279,40 +278,79 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
 
   const selectedDisplayCurrency = userSettings?.currency ?? portfolio.homeCurrency
 
+  const requestedDisplayFxCurrencies = useMemo(() => {
+    if (transactions === undefined) {
+      return null
+    }
+
+    const currencies = new Set<string>()
+
+    if (selectedDisplayCurrency !== portfolio.homeCurrency) {
+      currencies.add(portfolio.homeCurrency)
+    }
+
+    for (const transaction of transactions) {
+      if (transaction.nativeCurrency !== selectedDisplayCurrency) {
+        currencies.add(transaction.nativeCurrency)
+      }
+    }
+
+    return [...currencies]
+  }, [
+    portfolio.homeCurrency,
+    selectedDisplayCurrency,
+    transactions,
+  ])
+
   useEffect(() => {
-    if (selectedDisplayCurrency === portfolio.homeCurrency) {
-      setTotalValueFxRate(1)
-      setTotalValueFxError(null)
+    if (requestedDisplayFxCurrencies === null) {
+      setDisplayFxRates(null)
+      setDisplayFxError(null)
       return
     }
 
-    const abortController = new AbortController()
+    if (requestedDisplayFxCurrencies.length === 0) {
+      setDisplayFxRates({})
+      setDisplayFxError(null)
+      return
+    }
 
-    setTotalValueFxRate(null)
-    setTotalValueFxError(null)
+    let isCancelled = false
 
-    void fetchLatestFxRate({
-      base: portfolio.homeCurrency,
-      quote: selectedDisplayCurrency,
-      signal: abortController.signal,
+    setDisplayFxRates(null)
+    setDisplayFxError(null)
+
+    void getLatestFxRatesFn({
+      data: {
+        baseCurrencies: requestedDisplayFxCurrencies,
+        quoteCurrency: selectedDisplayCurrency,
+      },
     })
-      .then((rate) => {
-        setTotalValueFxRate(rate)
-      })
-      .catch((error) => {
-        if (abortController.signal.aborted) {
+      .then((rates) => {
+        if (isCancelled) {
           return
         }
 
-        setTotalValueFxError(
-          error instanceof Error ? error.message : 'Unable to load FX rate.',
+        setDisplayFxRates(rates)
+      })
+      .catch((error) => {
+        if (isCancelled) {
+          return
+        }
+
+        setDisplayFxError(
+          error instanceof Error ? error.message : 'Unable to load FX rates.',
         )
       })
 
     return () => {
-      abortController.abort()
+      isCancelled = true
     }
-  }, [portfolio.homeCurrency, selectedDisplayCurrency])
+  }, [
+    getLatestFxRatesFn,
+    requestedDisplayFxCurrencies,
+    selectedDisplayCurrency,
+  ])
 
   const needsLatestDisplayFx = useMemo(() => {
     if (transactions === undefined) {
@@ -327,83 +365,25 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     transactions,
   ])
 
-  useEffect(() => {
-    if (transactions === undefined) {
-      setLatestDisplayFxRates(null)
-      setLatestDisplayFxError(null)
-      return
-    }
-
-    const currencies = [...new Set(
-      transactions
-        .filter((transaction) => transaction.nativeCurrency !== selectedDisplayCurrency)
-        .map((transaction) => transaction.nativeCurrency),
-    )]
-
-    if (!needsLatestDisplayFx || currencies.length === 0) {
-      setLatestDisplayFxRates({})
-      setLatestDisplayFxError(null)
-      return
-    }
-
-    const abortController = new AbortController()
-
-    setLatestDisplayFxRates(null)
-    setLatestDisplayFxError(null)
-
-    void Promise.all(
-      currencies.map(async (currency) => {
-        const rate = await fetchLatestFxRate({
-          base: currency,
-          quote: selectedDisplayCurrency,
-          signal: abortController.signal,
-        })
-
-        return [currency, rate] as const
-      }),
-    )
-      .then((entries) => {
-        if (abortController.signal.aborted) {
-          return
-        }
-
-        setLatestDisplayFxRates(Object.fromEntries(entries))
-      })
-      .catch((error) => {
-        if (abortController.signal.aborted) {
-          return
-        }
-
-        setLatestDisplayFxError(
-          error instanceof Error
-            ? error.message
-            : 'Unable to load latest FX rates.',
-        )
-      })
-
-    return () => {
-      abortController.abort()
-    }
-  }, [
-    needsLatestDisplayFx,
-    selectedDisplayCurrency,
-    transactions,
-  ])
+  const totalValueFxRate =
+    selectedDisplayCurrency === portfolio.homeCurrency
+      ? 1
+      : (displayFxRates?.[portfolio.homeCurrency] ?? null)
+  const latestDisplayFxRates = displayFxRates
 
   const isTotalValueLoading =
     !isInitialLoad &&
     snapshot !== null &&
     selectedDisplayCurrency !== portfolio.homeCurrency &&
     totalValueFxRate === null &&
-    totalValueFxError === null
+    displayFxError === null
   const isLatestDisplayFxLoading =
     !isInitialLoad &&
     snapshot !== null &&
     needsLatestDisplayFx &&
     latestDisplayFxRates === null &&
-    latestDisplayFxError === null
-  const hasDisplayCurrencyError =
-    totalValueFxError !== null || latestDisplayFxError !== null
+    displayFxError === null
+  const hasDisplayCurrencyError = displayFxError !== null
   const holdingsDisplayCurrency = hasDisplayCurrencyError
     ? portfolio.homeCurrency
     : selectedDisplayCurrency
@@ -507,8 +487,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                   ) : null}
                   {snapshot?.anyStale ? <> · <StaleBadge /></> : null}
                   {snapshot?.totalValueIsPartial ? <> · <Badge variant="outline">Partial</Badge></> : null}
-                  {totalValueFxError ? <> · FX unavailable</> : null}
-                  {latestDisplayFxError ? <> · Latest FX unavailable</> : null}
+                  {displayFxError ? <> · FX unavailable</> : null}
                 </>
               )}
             </p>
@@ -550,15 +529,9 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                         <TableRow className="hover:bg-transparent">
                           <TableHead>Asset</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">
-                            Average cost ({holdingsDisplayCurrency})
-                          </TableHead>
-                          <TableHead className="text-right">
-                            Current price ({holdingsDisplayCurrency})
-                          </TableHead>
-                          <TableHead className="text-right">
-                            Current value ({holdingsDisplayCurrency})
-                          </TableHead>
+                          <TableHead className="text-right">Average cost</TableHead>
+                          <TableHead className="text-right">Current price</TableHead>
+                          <TableHead className="text-right">Current value</TableHead>
                           <TableHead className="text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -677,7 +650,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                               </div>
                               <div>
                                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                                  Average cost ({holdingsDisplayCurrency})
+                                  Average cost
                                 </p>
                                 <p className="mt-1 tabular-nums text-foreground">
                                   {formatCurrency(
@@ -688,7 +661,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                               </div>
                               <div>
                                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                                  Current price ({holdingsDisplayCurrency})
+                                  Current price
                                 </p>
                                 <p className="mt-1 tabular-nums text-foreground">
                                   {displayedCurrentPrice === null
@@ -701,7 +674,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                               </div>
                               <div>
                                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                                  Current value ({holdingsDisplayCurrency})
+                                  Current value
                                 </p>
                                 <div className="mt-1 flex items-center gap-2">
                                   <p className="tabular-nums font-medium text-foreground">
