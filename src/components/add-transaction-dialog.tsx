@@ -217,7 +217,7 @@ export default function AddTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="gap-0 overflow-hidden p-0 sm:max-w-[420px]"
+        className="gap-0 overflow-visible p-0 sm:max-w-[420px]"
       >
         <form onSubmit={handleSubmit}>
           <DialogHeader className="border-b px-6 py-3.5">
