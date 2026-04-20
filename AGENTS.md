@@ -4,6 +4,21 @@ Use Bun for package management and package runner commands in this repository. P
 
 Use kebab-case for project-authored filenames. Keep framework-required or generated filenames unchanged when a tool depends on a specific name, such as `AGENTS.md`, `CLAUDE.md`, `README.md`, `src/routes/__root.tsx`, or generated files.
 
+## React Feature Structure
+
+For React code, prefer a feature-based folder structure over organizing by file type at the app root.
+
+- Organize by feature or domain first, such as `transactions`, `budgets`, or `auth`.
+- Keep each feature self-contained where practical, colocating its components, hooks, validation, server calls, tests, and feature-specific utilities.
+- Keep only genuinely cross-cutting code in shared locations such as `src/shared` or `src/lib`.
+- Prefer a small public API for each feature, typically through an `index.ts` barrel, instead of deep imports into internal files.
+- Avoid broad root-level buckets like `components/`, `hooks/`, or `utils/` unless the contents are truly shared across features.
+- Colocate tests, schemas, and styles with the feature they belong to.
+- Routes should primarily compose features, not become the main home for business logic.
+- Keep dependency direction clear: app and routes may depend on features, and features may depend on shared code, but features should not casually depend on one another's internals.
+- Do not extract code to shared preemptively; move it only after reuse is real and the abstraction is clearly generic.
+- Do not force identical subfolders in every feature. Keep each feature folder only as large as its actual needs.
+
 ## Build Verification
 
 When you need to verify changes, run `bun run lint` first and then `bun run build` from the repository root. Treat zero exit codes as the primary success signal.
