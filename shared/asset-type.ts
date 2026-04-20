@@ -1,36 +1,5 @@
 import type { AssetType } from './portfolio'
-
-const COMMON_CRYPTO_TICKERS = new Set([
-  'AAVE',
-  'ADA',
-  'ARB',
-  'ATOM',
-  'AVAX',
-  'BCH',
-  'BNB',
-  'BTC',
-  'DOGE',
-  'DOT',
-  'ETC',
-  'ETH',
-  'FIL',
-  'ICP',
-  'LINK',
-  'LTC',
-  'MATIC',
-  'NEAR',
-  'OP',
-  'PEPE',
-  'SHIB',
-  'SOL',
-  'SUI',
-  'TON',
-  'TRX',
-  'UNI',
-  'VET',
-  'XLM',
-  'XRP',
-])
+import { COMMON_CRYPTO_TICKERS } from './crypto-assets'
 
 export function resolveAssetTypeForPricing(
   assetType: AssetType,

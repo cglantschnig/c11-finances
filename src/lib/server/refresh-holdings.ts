@@ -4,11 +4,19 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { resolveAssetTypeForPricing } from '../../../shared/asset-type'
+import { getCoinGeckoIdForTicker } from '../../../shared/crypto-assets'
 
 class AlphaVantageError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'AlphaVantageError'
+  }
+}
+
+class CoinGeckoError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'CoinGeckoError'
   }
 }
 
@@ -62,6 +70,30 @@ async function fetchAlphaVantage(url: URL) {
   return payload
 }
 
+async function fetchCoinGecko(url: URL) {
+  const response = await fetch(url, { cache: 'no-store' })
+  if (!response.ok) {
+    throw new CoinGeckoError(
+      `CoinGecko request failed with ${response.status}.`,
+    )
+  }
+
+  const payload = (await response.json()) as Record<string, unknown>
+  const status = payload.status
+
+  if (
+    status &&
+    typeof status === 'object' &&
+    typeof (status as Record<string, unknown>).error_message === 'string'
+  ) {
+    throw new CoinGeckoError(
+      (status as Record<string, string>).error_message,
+    )
+  }
+
+  return payload
+}
+
 async function fetchEquityPrice(ticker: string) {
   const url = new URL('https://www.alphavantage.co/query')
   url.searchParams.set('function', 'GLOBAL_QUOTE')
@@ -84,20 +116,31 @@ async function fetchEquityPrice(ticker: string) {
 }
 
 async function fetchCryptoPrice(ticker: string, currency: string) {
-  const url = new URL('https://www.alphavantage.co/query')
-  url.searchParams.set('function', 'CURRENCY_EXCHANGE_RATE')
-  url.searchParams.set('from_currency', ticker)
-  url.searchParams.set('to_currency', currency)
-  url.searchParams.set('apikey', getAlphaVantageApiKey())
+  const normalizedTicker = ticker.trim().toUpperCase()
+  const normalizedCurrency = currency.trim().toLowerCase()
+  const coinGeckoId = getCoinGeckoIdForTicker(normalizedTicker)
+  const payloadKey = coinGeckoId ?? normalizedTicker.toLowerCase()
+  const url = new URL('https://api.coingecko.com/api/v3/simple/price')
 
-  const payload = await fetchAlphaVantage(url)
-  const ratePayload = payload['Realtime Currency Exchange Rate']
+  if (coinGeckoId) {
+    url.searchParams.set('ids', coinGeckoId)
+  } else {
+    url.searchParams.set('symbols', normalizedTicker.toLowerCase())
+    url.searchParams.set('include_tokens', 'top')
+  }
+
+  url.searchParams.set('vs_currencies', normalizedCurrency)
+
+  const payload = await fetchCoinGecko(url)
+  const ratePayload = payload[payloadKey]
 
   if (!ratePayload || typeof ratePayload !== 'object') {
     throw new Error(`No crypto quote returned for ${ticker}.`)
   }
 
-  const price = Number((ratePayload as Record<string, unknown>)['5. Exchange Rate'])
+  const price = Number(
+    (ratePayload as Record<string, unknown>)[normalizedCurrency],
+  )
   if (!Number.isFinite(price) || price <= 0) {
     throw new Error(`Invalid crypto price returned for ${ticker}.`)
   }
@@ -183,11 +226,16 @@ export const refreshHoldings = createServerFn({ method: 'POST' })
           ticker: item.ticker,
         })
       } catch (error) {
-        if (error instanceof AlphaVantageError) {
-          console.error('Alpha Vantage price refresh failed', {
+        if (
+          error instanceof AlphaVantageError ||
+          error instanceof CoinGeckoError
+        ) {
+          console.error('External price refresh failed', {
             assetType: item.assetType,
             portfolioId: data.portfolioId,
             ticker: item.ticker,
+            provider:
+              error instanceof AlphaVantageError ? 'alpha-vantage' : 'coingecko',
             message: error.message,
           })
 

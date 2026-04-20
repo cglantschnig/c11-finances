@@ -9,6 +9,7 @@ describe('resolveAssetTypeForPricing', () => {
   it('treats common crypto tickers as crypto for legacy pricing data', () => {
     expect(resolveAssetTypeForPricing('equity', 'BTC')).toBe('crypto')
     expect(resolveAssetTypeForPricing('equity', 'eth')).toBe('crypto')
+    expect(resolveAssetTypeForPricing('equity', 'usdc')).toBe('crypto')
   })
 
   it('keeps non-crypto tickers as equities', () => {

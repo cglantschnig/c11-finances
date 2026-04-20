@@ -102,14 +102,14 @@ function HoldingsSkeleton() {
     <>
       <div className="hidden md:block">
         <div className="overflow-hidden rounded-lg border">
-          <div className="grid grid-cols-[140px_repeat(4,minmax(100px,1fr))] gap-3 border-b px-4 py-3">
-            {Array.from({ length: 5 }).map((_, i) => (
+          <div className="grid grid-cols-[140px_repeat(5,minmax(100px,1fr))] gap-3 border-b px-4 py-3">
+            {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-4 rounded-full" />
             ))}
           </div>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-[140px_repeat(4,minmax(100px,1fr))] gap-3 border-b px-4 py-4 last:border-b-0">
-              {Array.from({ length: 5 }).map((__, j) => (
+            <div key={i} className="grid grid-cols-[140px_repeat(5,minmax(100px,1fr))] gap-3 border-b px-4 py-4 last:border-b-0">
+              {Array.from({ length: 6 }).map((__, j) => (
                 <Skeleton key={j} className="h-5 rounded-full" />
               ))}
             </div>
@@ -405,6 +405,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                           <TableHead>Asset</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
                           <TableHead className="text-right">Average price</TableHead>
+                          <TableHead className="text-right">Current price</TableHead>
                           <TableHead className="text-right">Current value</TableHead>
                           <TableHead className="text-right">P&amp;L</TableHead>
                         </TableRow>
@@ -425,6 +426,14 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                   holding.avgCostBasis * holdingsDisplayFxRate,
                                   holdingsDisplayCurrency,
                                 )}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {holding.currentPrice === null
+                                  ? '—'
+                                  : formatCurrency(
+                                    holding.currentPrice * holdingsDisplayFxRate,
+                                    holdingsDisplayCurrency,
+                                  )}
                               </TableCell>
                               <TableCell className="text-right tabular-nums font-medium text-foreground">
                                 <div className="inline-flex items-center gap-2">
@@ -481,6 +490,17 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                     holding.avgCostBasis * holdingsDisplayFxRate,
                                     holdingsDisplayCurrency,
                                   )}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Current price</p>
+                                <p className="mt-1 tabular-nums text-foreground">
+                                  {holding.currentPrice === null
+                                    ? '—'
+                                    : formatCurrency(
+                                      holding.currentPrice * holdingsDisplayFxRate,
+                                      holdingsDisplayCurrency,
+                                    )}
                                 </p>
                               </div>
                               <div>

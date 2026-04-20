@@ -1,4 +1,5 @@
 import listingStatusCsv from '../../data/listing_status.csv?raw'
+import { COMMON_CRYPTO_ASSETS } from '../../shared/crypto-assets'
 
 export type AssetAutocompleteOption = {
   assetType: 'equity' | 'crypto'
@@ -12,38 +13,14 @@ type IndexedAssetAutocompleteOption = AssetAutocompleteOption & {
   symbolSearch: string
 }
 
-const commonCryptoAssets: AssetAutocompleteOption[] = [
-  { symbol: 'BTC', name: 'Bitcoin', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'ETH', name: 'Ethereum', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'USDT', name: 'Tether', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'BNB', name: 'BNB', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'SOL', name: 'Solana', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'USDC', name: 'USD Coin', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'XRP', name: 'XRP', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'DOGE', name: 'Dogecoin', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'ADA', name: 'Cardano', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'TRX', name: 'TRON', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'LINK', name: 'Chainlink', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'AVAX', name: 'Avalanche', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'DOT', name: 'Polkadot', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'TON', name: 'Toncoin', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'SHIB', name: 'Shiba Inu', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'LTC', name: 'Litecoin', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'BCH', name: 'Bitcoin Cash', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'UNI', name: 'Uniswap', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'XLM', name: 'Stellar', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'HBAR', name: 'Hedera', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'ATOM', name: 'Cosmos', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'NEAR', name: 'NEAR Protocol', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'ICP', name: 'Internet Computer', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'APT', name: 'Aptos', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'FIL', name: 'Filecoin', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'ARB', name: 'Arbitrum', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'OP', name: 'Optimism', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'SUI', name: 'Sui', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'MATIC', name: 'Polygon', label: 'crypto', assetType: 'crypto' },
-  { symbol: 'ALGO', name: 'Algorand', label: 'crypto', assetType: 'crypto' },
-]
+const commonCryptoAssets: AssetAutocompleteOption[] = COMMON_CRYPTO_ASSETS.map(
+  ({ name, symbol }) => ({
+    symbol,
+    name,
+    label: 'crypto',
+    assetType: 'crypto',
+  }),
+)
 
 function createIndexEntry(
   option: AssetAutocompleteOption,
