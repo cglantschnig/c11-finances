@@ -26,10 +26,12 @@ export function buildStatisticsAllocationData(options: {
     snapshot,
   } = options
 
+  const canDisplaySelectedCurrency =
+    selectedDisplayCurrency === homeCurrency || displayFxRate !== null
   const holdingsDisplayCurrency =
-    selectedDisplayCurrency === homeCurrency || displayFxError === null
-      ? selectedDisplayCurrency
-      : homeCurrency
+    displayFxError !== null || !canDisplaySelectedCurrency
+      ? homeCurrency
+      : selectedDisplayCurrency
   const holdingsDisplayFxRate =
     holdingsDisplayCurrency === homeCurrency ? 1 : (displayFxRate ?? 1)
 
@@ -121,11 +123,16 @@ export function useStatisticsAllocation(options: {
   selectedDisplayCurrency: string
   snapshot: HoldingsSnapshot | null
 }) {
-  const { error, rates } = useDisplayFxRates({
-    baseCurrencies:
+  const requestedDisplayFxCurrencies = useMemo(
+    () =>
       options.selectedDisplayCurrency === options.homeCurrency
         ? []
         : [options.homeCurrency],
+    [options.homeCurrency, options.selectedDisplayCurrency],
+  )
+
+  const { error, rates } = useDisplayFxRates({
+    baseCurrencies: requestedDisplayFxCurrencies,
     quoteCurrency: options.selectedDisplayCurrency,
   })
 

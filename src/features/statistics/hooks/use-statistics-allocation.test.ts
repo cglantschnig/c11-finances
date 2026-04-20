@@ -76,4 +76,35 @@ describe('buildStatisticsAllocationData', () => {
       value: 20,
     })
   })
+
+  it('keeps the tracked total in the home currency while display FX is still loading', () => {
+    const result = buildStatisticsAllocationData({
+      displayFxError: null,
+      displayFxRate: null,
+      homeCurrency: 'USD',
+      selectedDisplayCurrency: 'EUR',
+      snapshot: {
+        hasTransactions: true,
+        items: [
+          {
+            assetType: 'equity',
+            ticker: 'AAPL',
+            value: 60,
+          },
+          {
+            assetType: 'crypto',
+            ticker: 'BTC',
+            value: 40,
+          },
+        ],
+      } as Parameters<typeof buildStatisticsAllocationData>[0]['snapshot'],
+    })
+
+    expect(result.holdingsDisplayCurrency).toBe('USD')
+    expect(result.totalTrackedValue).toBe(100)
+    expect(result.assetAllocationData).toEqual([
+      { color: '#0f766e', label: 'AAPL', value: 60 },
+      { color: '#1d4ed8', label: 'BTC', value: 40 },
+    ])
+  })
 })
