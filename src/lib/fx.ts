@@ -2,29 +2,32 @@ export const COMMON_CURRENCIES = ['EUR', 'USD', 'GBP'] as const
 
 async function fetchFrankfurterRate(options: {
   base: string
-  endpoint: string
+  date?: string
   quote: string
   signal?: AbortSignal
 }) {
-  const { base, endpoint, quote, signal } = options
+  const { base, date, quote, signal } = options
 
   if (base === quote) {
     return 1
   }
 
-  const url = new URL(`https://api.frankfurter.dev/v1/${endpoint}`)
+  const url = new URL('https://api.frankfurter.dev/v2/rates')
   url.searchParams.set('base', base)
-  url.searchParams.set('symbols', quote)
+  url.searchParams.set('quotes', quote)
+  if (date) {
+    url.searchParams.set('date', date)
+  }
 
   const response = await fetch(url, { signal })
   if (!response.ok) {
     throw new Error(`FX lookup failed with ${response.status}.`)
   }
 
-  const payload = (await response.json()) as {
-    rates?: Record<string, number>
-  }
-  const rate = payload.rates?.[quote]
+  const payload = (await response.json()) as Array<{
+    rate?: number
+  }>
+  const rate = payload[0]?.rate
 
   if (!Number.isFinite(rate) || !rate || rate <= 0) {
     throw new Error(`No FX rate found for ${base}/${quote}.`)
@@ -42,7 +45,7 @@ export async function fetchHistoricalFxRate(options: {
   const { base, date, quote, signal } = options
   return await fetchFrankfurterRate({
     base,
-    endpoint: date,
+    date,
     quote,
     signal,
   })
@@ -57,7 +60,6 @@ export async function fetchLatestFxRate(options: {
 
   return await fetchFrankfurterRate({
     base,
-    endpoint: 'latest',
     quote,
     signal,
   })
