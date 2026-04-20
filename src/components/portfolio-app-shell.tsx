@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import {
   IconChartHistogram,
+  IconChartPie,
   IconList,
   IconPlus,
 } from '@tabler/icons-react'
@@ -43,6 +44,11 @@ const navigationItems = [
     icon: IconList,
     label: 'Transactions',
     to: '/transactions' as const,
+  },
+  {
+    icon: IconChartPie,
+    label: 'Statistics',
+    to: '/statistics' as const,
   },
 ]
 
