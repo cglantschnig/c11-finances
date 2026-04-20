@@ -5,6 +5,13 @@ import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { resolveAssetTypeForPricing } from '../../../shared/asset-type'
 
+class AlphaVantageError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AlphaVantageError'
+  }
+}
+
 function getConvexUrl() {
   const url = process.env.VITE_CONVEX_URL
   if (!url) {
@@ -37,7 +44,9 @@ async function getConvexToken() {
 async function fetchAlphaVantage(url: URL) {
   const response = await fetch(url, { cache: 'no-store' })
   if (!response.ok) {
-    throw new Error(`Alpha Vantage request failed with ${response.status}.`)
+    throw new AlphaVantageError(
+      `Alpha Vantage request failed with ${response.status}.`,
+    )
   }
 
   const payload = (await response.json()) as Record<string, unknown>
@@ -47,7 +56,7 @@ async function fetchAlphaVantage(url: URL) {
     (typeof payload.Note === 'string' && payload.Note)
 
   if (errorMessage) {
-    throw new Error(errorMessage)
+    throw new AlphaVantageError(errorMessage)
   }
 
   return payload
@@ -174,6 +183,21 @@ export const refreshHoldings = createServerFn({ method: 'POST' })
           ticker: item.ticker,
         })
       } catch (error) {
+        if (error instanceof AlphaVantageError) {
+          console.error('Alpha Vantage price refresh failed', {
+            assetType: item.assetType,
+            portfolioId: data.portfolioId,
+            ticker: item.ticker,
+            message: error.message,
+          })
+
+          if (item.currentPrice === null || item.fetchedAt === null) {
+            throw new Error('Unable to refresh prices right now.', { cause: error })
+          }
+
+          continue
+        }
+
         if (item.currentPrice === null || item.fetchedAt === null) {
           throw error
         }
