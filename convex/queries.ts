@@ -27,6 +27,10 @@ type HoldingSnapshot = {
 
 const DEFAULT_USER_CURRENCY = 'EUR' as const
 
+function normalizeCurrency(currency: string) {
+  return currency.trim().toUpperCase()
+}
+
 async function getViewerTokenIdentifier(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity()
   return identity?.tokenIdentifier ?? null
@@ -165,6 +169,35 @@ export const getUserSettings = query({
     return {
       currency: settings?.currency ?? DEFAULT_USER_CURRENCY,
     }
+  },
+})
+
+export const getCachedFxRates = query({
+  args: {
+    baseCurrencies: v.array(v.string()),
+    quoteCurrency: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const quoteCurrency = normalizeCurrency(args.quoteCurrency)
+    const requestedBaseCurrencies = [
+      ...new Set(args.baseCurrencies.map(normalizeCurrency)),
+    ].filter((baseCurrency) => baseCurrency !== quoteCurrency)
+    const cachedRates: Doc<'fxCache'>[] = []
+
+    for (const baseCurrency of requestedBaseCurrencies) {
+      const cachedRate = await ctx.db
+        .query('fxCache')
+        .withIndex('by_key', (query) =>
+          query.eq('key', `${baseCurrency}:${quoteCurrency}`),
+        )
+        .unique()
+
+      if (cachedRate) {
+        cachedRates.push(cachedRate)
+      }
+    }
+
+    return cachedRates
   },
 })
 

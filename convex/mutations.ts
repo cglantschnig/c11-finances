@@ -320,3 +320,49 @@ export const upsertPriceCacheInternal = internalMutation({
     return await ctx.db.insert('priceCache', args)
   },
 })
+
+export const upsertFxCache = mutation({
+  args: {
+    baseCurrency: v.string(),
+    lastModifiedAt: v.number(),
+    quoteCurrency: v.string(),
+    rate: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requireViewerTokenIdentifier(ctx)
+
+    const baseCurrency = normalizeCurrency(args.baseCurrency)
+    const quoteCurrency = normalizeCurrency(args.quoteCurrency)
+    const key = `${baseCurrency}:${quoteCurrency}`
+
+    assertIsoCurrency(baseCurrency)
+    assertIsoCurrency(quoteCurrency)
+
+    if (args.rate <= 0) {
+      throw new Error('FX rate must be greater than 0.')
+    }
+
+    const existing = await ctx.db
+      .query('fxCache')
+      .withIndex('by_key', (query) => query.eq('key', key))
+      .unique()
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        baseCurrency,
+        lastModifiedAt: args.lastModifiedAt,
+        quoteCurrency,
+        rate: args.rate,
+      })
+      return existing._id
+    }
+
+    return await ctx.db.insert('fxCache', {
+      baseCurrency,
+      key,
+      lastModifiedAt: args.lastModifiedAt,
+      quoteCurrency,
+      rate: args.rate,
+    })
+  },
+})

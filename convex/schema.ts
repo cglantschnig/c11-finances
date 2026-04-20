@@ -2,6 +2,13 @@ import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
 export default defineSchema({
+  fxCache: defineTable({
+    baseCurrency: v.string(),
+    key: v.string(),
+    lastModifiedAt: v.number(),
+    quoteCurrency: v.string(),
+    rate: v.number(),
+  }).index('by_key', ['key']),
   portfolios: defineTable({
     homeCurrency: v.string(),
     name: v.string(),
