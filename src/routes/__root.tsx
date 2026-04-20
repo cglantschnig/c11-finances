@@ -1,12 +1,13 @@
+import type { ReactNode } from 'react'
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import RootErrorComponent from '#/components/root-error-component'
-import { ThemeProvider } from '#/components/theme-provider'
-import { Toaster } from '#/components/ui/sonner'
-import { TooltipProvider } from '#/components/ui/tooltip'
-import ClerkProvider from '../integrations/clerk/provider'
-import ConvexProvider from '../integrations/convex/provider'
+import RootErrorComponent from '#/app/components/root-error-component'
+import { ThemeProvider } from '#/app/providers/theme-provider'
+import { Toaster } from '#/shared/ui/sonner'
+import { TooltipProvider } from '#/shared/ui/tooltip'
+import ClerkProvider from '#/app/providers/clerk-provider'
+import ConvexProvider from '#/app/providers/convex-provider'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
@@ -51,7 +52,7 @@ export const Route = createRootRoute({
   errorComponent: RootErrorComponent,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
