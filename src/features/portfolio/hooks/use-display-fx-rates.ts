@@ -11,6 +11,19 @@ export function normalizeDisplayFxBaseCurrencies(baseCurrencies: string[] | null
   return baseCurrencies === null ? null : [...new Set(baseCurrencies)].sort()
 }
 
+export function getDisplayFxBaseCurrenciesKey(baseCurrencies: string[] | null) {
+  const normalizedBaseCurrencies = normalizeDisplayFxBaseCurrencies(baseCurrencies)
+  return normalizedBaseCurrencies === null ? null : normalizedBaseCurrencies.join('|')
+}
+
+function parseDisplayFxBaseCurrenciesKey(baseCurrenciesKey: string | null) {
+  if (baseCurrenciesKey === null) {
+    return null
+  }
+
+  return baseCurrenciesKey === '' ? [] : baseCurrenciesKey.split('|')
+}
+
 export function useDisplayFxRates({
   baseCurrencies,
   quoteCurrency,
@@ -18,11 +31,12 @@ export function useDisplayFxRates({
   const getLatestFxRatesFn = useServerFn(getLatestFxRates)
   const [rates, setRates] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const normalizedBaseCurrencies = normalizeDisplayFxBaseCurrencies(baseCurrencies)
-  const baseCurrenciesKey =
-    normalizedBaseCurrencies === null ? null : normalizedBaseCurrencies.join('|')
+  const baseCurrenciesKey = getDisplayFxBaseCurrenciesKey(baseCurrencies)
 
   useEffect(() => {
+    const normalizedBaseCurrencies =
+      parseDisplayFxBaseCurrenciesKey(baseCurrenciesKey)
+
     if (normalizedBaseCurrencies === null) {
       setRates(null)
       setError(null)
@@ -64,7 +78,7 @@ export function useDisplayFxRates({
     return () => {
       isCancelled = true
     }
-  }, [baseCurrenciesKey, getLatestFxRatesFn, normalizedBaseCurrencies, quoteCurrency])
+  }, [baseCurrenciesKey, getLatestFxRatesFn, quoteCurrency])
 
   return {
     error,

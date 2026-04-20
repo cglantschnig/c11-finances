@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeDisplayFxBaseCurrencies } from './use-display-fx-rates'
+import {
+  getDisplayFxBaseCurrenciesKey,
+  normalizeDisplayFxBaseCurrencies,
+} from './use-display-fx-rates'
 
 describe('normalizeDisplayFxBaseCurrencies', () => {
   it('deduplicates and stabilizes equivalent currency lists', () => {
@@ -12,5 +15,12 @@ describe('normalizeDisplayFxBaseCurrencies', () => {
       'USD',
     ])
     expect(normalizeDisplayFxBaseCurrencies(null)).toBeNull()
+  })
+
+  it('builds a stable key for equivalent currency requests', () => {
+    expect(getDisplayFxBaseCurrenciesKey(['USD', 'GBP', 'USD'])).toBe('GBP|USD')
+    expect(getDisplayFxBaseCurrenciesKey(['GBP', 'USD'])).toBe('GBP|USD')
+    expect(getDisplayFxBaseCurrenciesKey([])).toBe('')
+    expect(getDisplayFxBaseCurrenciesKey(null)).toBeNull()
   })
 })
