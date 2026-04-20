@@ -43,11 +43,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '#/components/ui/tooltip'
+import {
+  aggregateOpenHoldingsInCurrency,
+  unrealizedPnlPct,
+} from '../../shared/portfolio'
 
 type Portfolio = Doc<'portfolios'>
 type HoldingsSnapshot = NonNullable<
   FunctionReturnType<typeof api.queries.getCachedHoldings>
 >
+type TransactionsList = NonNullable<
+  FunctionReturnType<typeof api.queries.listTransactions>
+>
+type PortfolioTransaction = TransactionsList[number]
 
 export const Route = createFileRoute('/dashboard')({
   ssr: false,
@@ -143,6 +151,20 @@ function holdingsStatusText(
   return null
 }
 
+function toPortfolioTransaction(transaction: PortfolioTransaction) {
+  return {
+    assetType: transaction.assetType,
+    creationTime: transaction._creationTime,
+    date: transaction.date,
+    fxRate: transaction.fxRate,
+    nativeCurrency: transaction.nativeCurrency,
+    pricePerUnit: transaction.pricePerUnit,
+    quantity: transaction.quantity,
+    side: transaction.side,
+    ticker: transaction.ticker,
+  }
+}
+
 function DashboardRoute() {
   return (
     <PortfolioGate>
@@ -155,6 +177,9 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
   const cachedHoldings = useQuery(api.queries.getCachedHoldings, {
     portfolioId: portfolio._id,
   })
+  const transactions = useQuery(api.queries.listTransactions, {
+    portfolioId: portfolio._id,
+  })
   const userSettings = useQuery(api.queries.getUserSettings, {})
   const refreshHoldingsFn = useServerFn(refreshHoldings)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
@@ -164,6 +189,10 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
   const [progressCount, setProgressCount] = useState(0)
   const [totalValueFxRate, setTotalValueFxRate] = useState<number | null>(1)
   const [totalValueFxError, setTotalValueFxError] = useState<string | null>(null)
+  const [latestDisplayFxRates, setLatestDisplayFxRates] = useState<
+    Record<string, number> | null
+  >({})
+  const [latestDisplayFxError, setLatestDisplayFxError] = useState<string | null>(null)
 
   const needsRefresh = Boolean(
     cachedHoldings &&
@@ -248,10 +277,10 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     return Math.max(...fetchedAtValues)
   }, [snapshot])
 
-  const totalValueCurrency = userSettings?.currency ?? portfolio.homeCurrency
+  const selectedDisplayCurrency = userSettings?.currency ?? portfolio.homeCurrency
 
   useEffect(() => {
-    if (totalValueCurrency === portfolio.homeCurrency) {
+    if (selectedDisplayCurrency === portfolio.homeCurrency) {
       setTotalValueFxRate(1)
       setTotalValueFxError(null)
       return
@@ -264,7 +293,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
 
     void fetchLatestFxRate({
       base: portfolio.homeCurrency,
-      quote: totalValueCurrency,
+      quote: selectedDisplayCurrency,
       signal: abortController.signal,
     })
       .then((rate) => {
@@ -283,27 +312,143 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
     return () => {
       abortController.abort()
     }
-  }, [portfolio.homeCurrency, totalValueCurrency])
+  }, [portfolio.homeCurrency, selectedDisplayCurrency])
 
-  const resolvedTotalValueCurrency =
-    totalValueFxRate === null ? portfolio.homeCurrency : totalValueCurrency
-  const holdingsDisplayFxRate = totalValueFxRate ?? 1
-  const holdingsDisplayCurrency = resolvedTotalValueCurrency
-  const displayedTotalValue =
-    (snapshot?.totalValue ?? 0) * (totalValueFxRate ?? 1)
-  const totalPnl = snapshot?.totalPnl ?? 0
-  const totalCostBasis = (snapshot?.totalValue ?? 0) - totalPnl
-  const totalPnlIsPositive = totalPnl >= 0
-  const totalPnlPct =
-    Math.abs(totalCostBasis) < Number.EPSILON
-      ? 0
-      : (totalPnl / totalCostBasis) * 100
+  const needsLatestDisplayFx = useMemo(() => {
+    if (transactions === undefined) {
+      return false
+    }
+
+    return transactions.some(
+      (transaction) => transaction.nativeCurrency !== selectedDisplayCurrency,
+    )
+  }, [
+    selectedDisplayCurrency,
+    transactions,
+  ])
+
+  useEffect(() => {
+    if (transactions === undefined) {
+      setLatestDisplayFxRates(null)
+      setLatestDisplayFxError(null)
+      return
+    }
+
+    const currencies = [...new Set(
+      transactions
+        .filter((transaction) => transaction.nativeCurrency !== selectedDisplayCurrency)
+        .map((transaction) => transaction.nativeCurrency),
+    )]
+
+    if (!needsLatestDisplayFx || currencies.length === 0) {
+      setLatestDisplayFxRates({})
+      setLatestDisplayFxError(null)
+      return
+    }
+
+    const abortController = new AbortController()
+
+    setLatestDisplayFxRates(null)
+    setLatestDisplayFxError(null)
+
+    void Promise.all(
+      currencies.map(async (currency) => {
+        const rate = await fetchLatestFxRate({
+          base: currency,
+          quote: selectedDisplayCurrency,
+          signal: abortController.signal,
+        })
+
+        return [currency, rate] as const
+      }),
+    )
+      .then((entries) => {
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        setLatestDisplayFxRates(Object.fromEntries(entries))
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        setLatestDisplayFxError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to load latest FX rates.',
+        )
+      })
+
+    return () => {
+      abortController.abort()
+    }
+  }, [
+    needsLatestDisplayFx,
+    selectedDisplayCurrency,
+    transactions,
+  ])
+
   const isTotalValueLoading =
     !isInitialLoad &&
     snapshot !== null &&
-    totalValueCurrency !== portfolio.homeCurrency &&
+    selectedDisplayCurrency !== portfolio.homeCurrency &&
     totalValueFxRate === null &&
     totalValueFxError === null
+  const isLatestDisplayFxLoading =
+    !isInitialLoad &&
+    snapshot !== null &&
+    needsLatestDisplayFx &&
+    latestDisplayFxRates === null &&
+    latestDisplayFxError === null
+  const hasDisplayCurrencyError =
+    totalValueFxError !== null || latestDisplayFxError !== null
+  const holdingsDisplayCurrency = hasDisplayCurrencyError
+    ? portfolio.homeCurrency
+    : selectedDisplayCurrency
+  const holdingsDisplayFxRate =
+    holdingsDisplayCurrency === portfolio.homeCurrency
+      ? 1
+      : (totalValueFxRate ?? 1)
+  const displayHoldings = useMemo(() => {
+    if (transactions === undefined || latestDisplayFxRates === null) {
+      return null
+    }
+
+    return aggregateOpenHoldingsInCurrency(
+      transactions.map(toPortfolioTransaction),
+      {
+        nativeToTargetFxRatesByCurrency: latestDisplayFxRates ?? undefined,
+        targetCurrency: holdingsDisplayCurrency,
+      },
+    )
+  }, [
+    latestDisplayFxRates,
+    holdingsDisplayCurrency,
+    transactions,
+  ])
+  const displayHoldingsByTicker = useMemo(
+    () => new Map(displayHoldings?.map((holding) => [holding.ticker, holding]) ?? []),
+    [displayHoldings],
+  )
+  const displayedTotalValue =
+    (snapshot?.totalValue ?? 0) * holdingsDisplayFxRate
+  const fallbackTotalCostBasis =
+    ((snapshot?.totalValue ?? 0) - (snapshot?.totalPnl ?? 0)) * holdingsDisplayFxRate
+  const displayedTotalCostBasis =
+    displayHoldings?.reduce((sum, holding) => sum + holding.costBasis, 0) ??
+    fallbackTotalCostBasis
+  const totalPnl = displayedTotalValue - displayedTotalCostBasis
+  const totalPnlIsPositive = totalPnl >= 0
+  const totalPnlPct =
+    Math.abs(displayedTotalCostBasis) < Number.EPSILON
+      ? 0
+      : (totalPnl / displayedTotalCostBasis) * 100
+  const isDisplayMetricsLoading =
+    isTotalValueLoading ||
+    isLatestDisplayFxLoading ||
+    (!isInitialLoad && snapshot !== null && transactions === undefined)
 
   return (
     <>
@@ -320,7 +465,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 Total value
               </p>
-              {isInitialLoad || isTotalValueLoading ? null : (
+              {isInitialLoad || isDisplayMetricsLoading ? null : (
                 <p
                   className={cn(
                     'inline-flex items-center gap-1 text-xs font-medium tabular-nums',
@@ -335,11 +480,11 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
               )}
             </div>
             <div className="mt-2">
-              {isInitialLoad || isTotalValueLoading ? (
+              {isInitialLoad || isDisplayMetricsLoading ? (
                 <Skeleton className="h-14 w-56 rounded-full" />
               ) : (
                 <p className="font-heading text-5xl tabular-nums text-foreground sm:text-6xl">
-                  {formatCurrency(displayedTotalValue, resolvedTotalValueCurrency)}
+                  {formatCurrency(displayedTotalValue, holdingsDisplayCurrency)}
                 </p>
               )}
             </div>
@@ -348,7 +493,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                 <>
                   {snapshot?.items.length ?? 0} positions
                   {' · '}
-                  total in {resolvedTotalValueCurrency}
+                  total in {holdingsDisplayCurrency}
                   {statusText ? (
                     <>
                       {' · '}
@@ -363,6 +508,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                   {snapshot?.anyStale ? <> · <StaleBadge /></> : null}
                   {snapshot?.totalValueIsPartial ? <> · <Badge variant="outline">Partial</Badge></> : null}
                   {totalValueFxError ? <> · FX unavailable</> : null}
+                  {latestDisplayFxError ? <> · Latest FX unavailable</> : null}
                 </>
               )}
             </p>
@@ -393,7 +539,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
               <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 Holdings
               </p>
-              {coldLoad || isInitialLoad ? (
+              {coldLoad || isInitialLoad || isDisplayMetricsLoading ? (
                 <HoldingsSkeleton />
               ) : snapshot && snapshot.items.length > 0 ? (
                 <>
@@ -405,7 +551,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                           <TableHead>Asset</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
                           <TableHead className="text-right">
-                            Average cost ({portfolio.homeCurrency})
+                            Average cost ({holdingsDisplayCurrency})
                           </TableHead>
                           <TableHead className="text-right">
                             Current price ({holdingsDisplayCurrency})
@@ -418,7 +564,27 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                       </TableHeader>
                       <TableBody>
                         {snapshot.items.map((holding) => {
-                          const pnlIsPositive = (holding.pnl ?? 0) >= 0
+                          const displayHolding = displayHoldingsByTicker.get(holding.ticker)
+                          const displayedAvgCostBasis =
+                            displayHolding?.avgCostBasis ??
+                            (holding.avgCostBasis * holdingsDisplayFxRate)
+                          const displayedCurrentPrice =
+                            holding.currentPrice === null
+                              ? null
+                              : holding.currentPrice * holdingsDisplayFxRate
+                          const displayedCurrentValue =
+                            holding.value === null
+                              ? null
+                              : holding.value * holdingsDisplayFxRate
+                          const displayedPnl =
+                            displayHolding && displayedCurrentValue !== null
+                              ? displayedCurrentValue - displayHolding.costBasis
+                              : holding.pnl
+                          const displayedPnlPct =
+                            displayHolding && displayedCurrentValue !== null
+                              ? unrealizedPnlPct(displayedCurrentValue, displayHolding.costBasis)
+                              : holding.pnlPct
+                          const pnlIsPositive = (displayedPnl ?? 0) >= 0
                           return (
                             <TableRow key={holding.ticker}>
                               <TableCell className="font-medium text-foreground">
@@ -429,24 +595,24 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                               </TableCell>
                               <TableCell className="text-right tabular-nums">
                                 {formatCurrency(
-                                  holding.avgCostBasis,
-                                  portfolio.homeCurrency,
+                                  displayedAvgCostBasis,
+                                  holdingsDisplayCurrency,
                                 )}
                               </TableCell>
                               <TableCell className="text-right tabular-nums">
-                                {holding.currentPrice === null
+                                {displayedCurrentPrice === null
                                   ? '—'
                                   : formatCurrency(
-                                    holding.currentPrice * holdingsDisplayFxRate,
+                                    displayedCurrentPrice,
                                     holdingsDisplayCurrency,
                                   )}
                               </TableCell>
                               <TableCell className="text-right tabular-nums font-medium text-foreground">
                                 <div className="inline-flex items-center gap-2">
-                                  {holding.value === null
+                                  {displayedCurrentValue === null
                                     ? '—'
                                     : formatCurrency(
-                                      holding.value * holdingsDisplayFxRate,
+                                      displayedCurrentValue,
                                       holdingsDisplayCurrency,
                                     )}
                                   {holding.cacheStatus === 'stale' ? <StaleBadge /> : null}
@@ -462,7 +628,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                   {pnlIsPositive
                                     ? <IconTrendingUp className="size-4" />
                                     : <IconTrendingDown className="size-4" />}
-                                  {holding.pnlPct === null ? '—' : formatPercent(holding.pnlPct)}
+                                  {displayedPnlPct === null ? '—' : formatPercent(displayedPnlPct)}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -475,7 +641,27 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                   {/* Mobile cards */}
                   <div className="grid gap-3 md:hidden">
                     {snapshot.items.map((holding) => {
-                      const pnlIsPositive = (holding.pnl ?? 0) >= 0
+                      const displayHolding = displayHoldingsByTicker.get(holding.ticker)
+                      const displayedAvgCostBasis =
+                        displayHolding?.avgCostBasis ??
+                        (holding.avgCostBasis * holdingsDisplayFxRate)
+                      const displayedCurrentPrice =
+                        holding.currentPrice === null
+                          ? null
+                          : holding.currentPrice * holdingsDisplayFxRate
+                      const displayedCurrentValue =
+                        holding.value === null
+                          ? null
+                          : holding.value * holdingsDisplayFxRate
+                      const displayedPnl =
+                        displayHolding && displayedCurrentValue !== null
+                          ? displayedCurrentValue - displayHolding.costBasis
+                          : holding.pnl
+                      const displayedPnlPct =
+                        displayHolding && displayedCurrentValue !== null
+                          ? unrealizedPnlPct(displayedCurrentValue, displayHolding.costBasis)
+                          : holding.pnlPct
+                      const pnlIsPositive = (displayedPnl ?? 0) >= 0
                       return (
                         <Card key={holding.ticker} size="sm">
                           <CardContent className="grid gap-4 pt-3">
@@ -491,12 +677,12 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                               </div>
                               <div>
                                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                                  Average cost ({portfolio.homeCurrency})
+                                  Average cost ({holdingsDisplayCurrency})
                                 </p>
                                 <p className="mt-1 tabular-nums text-foreground">
                                   {formatCurrency(
-                                    holding.avgCostBasis,
-                                    portfolio.homeCurrency,
+                                    displayedAvgCostBasis,
+                                    holdingsDisplayCurrency,
                                   )}
                                 </p>
                               </div>
@@ -505,10 +691,10 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                   Current price ({holdingsDisplayCurrency})
                                 </p>
                                 <p className="mt-1 tabular-nums text-foreground">
-                                  {holding.currentPrice === null
+                                  {displayedCurrentPrice === null
                                     ? '—'
                                     : formatCurrency(
-                                      holding.currentPrice * holdingsDisplayFxRate,
+                                      displayedCurrentPrice,
                                       holdingsDisplayCurrency,
                                     )}
                                 </p>
@@ -519,10 +705,10 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                 </p>
                                 <div className="mt-1 flex items-center gap-2">
                                   <p className="tabular-nums font-medium text-foreground">
-                                    {holding.value === null
+                                    {displayedCurrentValue === null
                                       ? '—'
                                       : formatCurrency(
-                                        holding.value * holdingsDisplayFxRate,
+                                        displayedCurrentValue,
                                         holdingsDisplayCurrency,
                                       )}
                                   </p>
@@ -538,7 +724,7 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                   {pnlIsPositive
                                     ? <IconTrendingUp className="size-4" />
                                     : <IconTrendingDown className="size-4" />}
-                                  {holding.pnlPct === null ? '—' : formatPercent(holding.pnlPct)}
+                                  {displayedPnlPct === null ? '—' : formatPercent(displayedPnlPct)}
                                 </p>
                               </div>
                             </div>

@@ -129,3 +129,46 @@ export function aggregateOpenHoldings(
       avgCostBasis: avgCostBasis(holding.costBasis, holding.quantity),
     }))
 }
+
+export function transactionFxRateForCurrency(
+  transaction: PortfolioTransactionLike,
+  options: {
+    targetCurrency: string
+    nativeToTargetFxRate?: number
+  },
+) {
+  const { targetCurrency, nativeToTargetFxRate } = options
+
+  if (transaction.nativeCurrency === targetCurrency) {
+    return 1
+  }
+
+  if (!nativeToTargetFxRate || nativeToTargetFxRate <= 0) {
+    throw new Error(
+      `Missing latest FX rate for ${transaction.nativeCurrency}/${targetCurrency}.`,
+    )
+  }
+
+  return nativeToTargetFxRate
+}
+
+export function aggregateOpenHoldingsInCurrency(
+  transactions: PortfolioTransactionLike[],
+  options: {
+    targetCurrency: string
+    nativeToTargetFxRatesByCurrency?: Record<string, number>
+  },
+) {
+  const { targetCurrency, nativeToTargetFxRatesByCurrency } = options
+
+  return aggregateOpenHoldings(
+    transactions.map((transaction) => ({
+      ...transaction,
+      fxRate: transactionFxRateForCurrency(transaction, {
+        nativeToTargetFxRate:
+          nativeToTargetFxRatesByCurrency?.[transaction.nativeCurrency],
+        targetCurrency,
+      }),
+    })),
+  )
+}

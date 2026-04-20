@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   aggregateOpenHoldings,
+  aggregateOpenHoldingsInCurrency,
   avgCostBasis,
+  transactionFxRateForCurrency,
   unrealizedPnl,
   unrealizedPnlPct,
 } from './portfolio'
@@ -90,5 +92,92 @@ describe('portfolio math', () => {
     expect(holding.avgCostBasis).toBeCloseTo(86.4, 6)
     expect(unrealizedPnl(400, holding.costBasis)).toBeCloseTo(54.4, 6)
     expect(unrealizedPnlPct(400, holding.costBasis)).toBeCloseTo(15.7407, 4)
+  })
+
+  it('uses the transaction native currency when recalculating into a target currency', () => {
+    const [holding] = aggregateOpenHoldingsInCurrency(
+      [
+        {
+          assetType: 'equity',
+          creationTime: 1,
+          date: '2026-02-10',
+          fxRate: 1.08,
+          nativeCurrency: 'EUR',
+          pricePerUnit: 80,
+          quantity: 2,
+          side: 'buy',
+          ticker: 'ASML',
+        },
+        {
+          assetType: 'equity',
+          creationTime: 2,
+          date: '2026-02-12',
+          fxRate: 1,
+          nativeCurrency: 'USD',
+          pricePerUnit: 100,
+          quantity: 1,
+          side: 'buy',
+          ticker: 'ASML',
+        },
+      ],
+      {
+        targetCurrency: 'PHP',
+        nativeToTargetFxRatesByCurrency: {
+          EUR: 61.56,
+          USD: 58,
+        },
+      },
+    )
+
+    expect(holding.costBasis).toBeCloseTo(15649.6, 6)
+    expect(holding.avgCostBasis).toBeCloseTo(5216.533333, 6)
+  })
+})
+
+describe('transactionFxRateForCurrency', () => {
+  const transaction = {
+    assetType: 'equity' as const,
+    creationTime: 1,
+    date: '2026-02-10',
+    fxRate: 1.08,
+    nativeCurrency: 'EUR',
+    pricePerUnit: 80,
+    quantity: 2,
+    side: 'buy' as const,
+    ticker: 'ASML',
+  }
+
+  it('returns 1 when the target currency already matches the transaction native currency', () => {
+    expect(
+      transactionFxRateForCurrency(transaction, {
+        targetCurrency: 'EUR',
+      }),
+    ).toBe(1)
+  })
+
+  it('uses the latest native-to-target rate', () => {
+    expect(
+      transactionFxRateForCurrency(transaction, {
+        nativeToTargetFxRate: 58.25,
+        targetCurrency: 'USD',
+      }),
+    ).toBe(58.25)
+  })
+
+  it('does not depend on transaction date when converting to the target currency', () => {
+    expect(
+      transactionFxRateForCurrency(transaction, {
+        nativeToTargetFxRate: 61.56,
+        targetCurrency: 'PHP',
+      }),
+    ).toBeCloseTo(61.56, 6)
+  })
+
+  it('throws when a latest native-to-target rate is required but missing', () => {
+    expect(() =>
+      transactionFxRateForCurrency(transaction, {
+        targetCurrency: 'PHP',
+      }),
+    ).toThrow('Missing latest FX rate for EUR/PHP.')
   })
 })
