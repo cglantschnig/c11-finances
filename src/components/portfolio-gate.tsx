@@ -153,7 +153,7 @@ function ConfiguredPortfolioGate({ children }: PortfolioGateProps) {
   }
 
   if (portfolio === undefined) {
-    return <LoadingState eyebrow="Portfolio" title="Loading your workspace..." />
+    return <LoadingState eyebrow="Portfolio" title="Loading your finances..." />
   }
 
   if (portfolio === null) {

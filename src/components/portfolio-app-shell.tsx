@@ -72,7 +72,7 @@ function Navigation({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+      <SidebarGroupLabel>Savings</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {navigationItems.map((item) => (

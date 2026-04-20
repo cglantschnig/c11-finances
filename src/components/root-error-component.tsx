@@ -1,4 +1,3 @@
-import type { ErrorComponentProps } from '@tanstack/react-router'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import {
   Card,
@@ -7,7 +6,7 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 
-export default function RootErrorComponent({}: ErrorComponentProps) {
+export default function RootErrorComponent() {
   return (
     <div className="relative isolate min-h-svh overflow-hidden bg-background text-foreground">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(15,118,110,0.14),transparent_38%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_38%)]" />
