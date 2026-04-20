@@ -36,6 +36,26 @@ export default defineSchema({
   })
     .index('by_portfolio_id_and_date', ['portfolioId', 'date'])
     .index('by_portfolio_id_and_ticker', ['portfolioId', 'ticker']),
+  expenses: defineTable({
+    amount: v.number(),
+    category: v.optional(
+      v.union(
+        v.literal('food'),
+        v.literal('transport'),
+        v.literal('housing'),
+        v.literal('health'),
+        v.literal('entertainment'),
+        v.literal('shopping'),
+        v.literal('work'),
+        v.literal('other'),
+      ),
+    ),
+    currency: v.string(),
+    date: v.string(),
+    note: v.optional(v.string()),
+    type: v.union(v.literal('expense'), v.literal('income')),
+    userTokenIdentifier: v.string(),
+  }).index('by_user_and_date', ['userTokenIdentifier', 'date']),
   userSettings: defineTable({
     currency: v.union(
       v.literal('EUR'),

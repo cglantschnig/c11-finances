@@ -255,6 +255,65 @@ export const deleteTransaction = mutation({
   },
 })
 
+export const createExpense = mutation({
+  args: {
+    amount: v.number(),
+    category: v.optional(
+      v.union(
+        v.literal('food'),
+        v.literal('transport'),
+        v.literal('housing'),
+        v.literal('health'),
+        v.literal('entertainment'),
+        v.literal('shopping'),
+        v.literal('work'),
+        v.literal('other'),
+      ),
+    ),
+    currency: v.string(),
+    date: v.string(),
+    note: v.optional(v.string()),
+    type: v.union(v.literal('expense'), v.literal('income')),
+  },
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await requireViewerTokenIdentifier(ctx)
+
+    assertDate(args.date)
+    assertIsoCurrency(normalizeCurrency(args.currency))
+
+    if (args.amount <= 0) {
+      throw new Error('Amount must be greater than 0.')
+    }
+
+    return await ctx.db.insert('expenses', {
+      amount: args.amount,
+      ...(args.category ? { category: args.category } : {}),
+      currency: normalizeCurrency(args.currency),
+      date: args.date,
+      ...(args.note?.trim() ? { note: args.note.trim() } : {}),
+      type: args.type,
+      userTokenIdentifier: tokenIdentifier,
+    })
+  },
+})
+
+export const deleteExpense = mutation({
+  args: {
+    expenseId: v.id('expenses'),
+  },
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await requireViewerTokenIdentifier(ctx)
+    const expense = await ctx.db.get(args.expenseId)
+
+    if (!expense || expense.userTokenIdentifier !== tokenIdentifier) {
+      throw new Error('Expense not found.')
+    }
+
+    await ctx.db.delete(args.expenseId)
+    return null
+  },
+})
+
 export const upsertPriceCache = mutation({
   args: {
     fetchedAt: v.number(),

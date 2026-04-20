@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -21,11 +21,12 @@ type TransactionsList = NonNullable<
   FunctionReturnType<typeof api.queries.listTransactions>
 >
 
-export function TransactionsPage() {
+export function TransactionsPage({ addNew = false }: { addNew?: boolean }) {
   return (
     <PortfolioPageLayout title="Transactions">
       {({ openAddTransaction, portfolio }) => (
         <TransactionsScreen
+          addNew={addNew}
           portfolio={portfolio}
           onOpenAddTransaction={openAddTransaction}
         />
@@ -35,12 +36,21 @@ export function TransactionsPage() {
 }
 
 function TransactionsScreen({
+  addNew,
   onOpenAddTransaction,
   portfolio,
 }: {
+  addNew: boolean
   onOpenAddTransaction: () => void
   portfolio: ViewerPortfolio
 }) {
+  useEffect(() => {
+    if (addNew) {
+      onOpenAddTransaction()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const transactions = useQuery(api.queries.listTransactions, {
     portfolioId: portfolio._id,
   })

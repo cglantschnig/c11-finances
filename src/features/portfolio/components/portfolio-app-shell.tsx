@@ -1,7 +1,9 @@
+import type React from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   IconChartHistogram,
   IconChartPie,
+  IconCurrencyEuro,
   IconList,
   IconPlus,
 } from '@tabler/icons-react'
@@ -29,12 +31,13 @@ import {
 
 type PortfolioAppShellProps = {
   children: import('react').ReactNode
+  headerButtonLabel?: string
   onOpenAddTransaction: () => void
   showMobileHeaderModeToggle?: boolean
   title: string
 }
 
-const navigationItems = [
+const savingsItems = [
   {
     icon: IconChartHistogram,
     label: 'Portfolio',
@@ -49,6 +52,14 @@ const navigationItems = [
     icon: IconChartPie,
     label: 'Statistics',
     to: '/statistics' as const,
+  },
+]
+
+const dailyLifeItems = [
+  {
+    icon: IconCurrencyEuro,
+    label: 'Expenses',
+    to: '/expenses' as const,
   },
 ]
 
@@ -71,17 +82,23 @@ function Brand() {
   )
 }
 
+type NavItem = { icon: React.ComponentType<{ className?: string }>; label: string; to: string }
+
 function Navigation({
+  items,
+  label,
   onNavigate,
 }: {
+  items: NavItem[]
+  label: string
   onNavigate?: () => void
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Savings</SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {navigationItems.map((item) => (
+          {items.map((item) => (
             <SidebarMenuItem key={item.to}>
               <SidebarMenuButton asChild tooltip={item.label}>
                 <Link
@@ -104,6 +121,7 @@ function Navigation({
 
 export default function PortfolioAppShell({
   children,
+  headerButtonLabel = 'Add transaction',
   onOpenAddTransaction,
   showMobileHeaderModeToggle = true,
   title,
@@ -118,7 +136,8 @@ export default function PortfolioAppShell({
         <SidebarSeparator />
 
         <SidebarContent className="gap-4 px-2 py-3">
-          <Navigation />
+          <Navigation label="Savings" items={savingsItems} />
+          <Navigation label="Daily Life" items={dailyLifeItems} />
         </SidebarContent>
 
         <SidebarSeparator />
@@ -168,7 +187,7 @@ export default function PortfolioAppShell({
               ) : null}
               <Button size="sm" onClick={onOpenAddTransaction}>
                 <IconPlus className="size-4" />
-                <span className="hidden sm:inline">Add transaction</span>
+                <span className="hidden sm:inline">{headerButtonLabel}</span>
               </Button>
             </div>
           </div>

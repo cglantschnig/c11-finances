@@ -1,3 +1,5 @@
+import { format } from 'date-fns'
+
 export function formatCurrency(
   value: number,
   currency: string,
@@ -29,5 +31,5 @@ export function formatQuantity(value: number) {
 }
 
 export function todayIsoDate() {
-  return new Date().toISOString().slice(0, 10)
+  return format(new Date(), 'yyyy-MM-dd')
 }

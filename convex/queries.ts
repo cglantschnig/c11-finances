@@ -259,6 +259,35 @@ export const getCachedHoldings = query({
   },
 })
 
+export const listExpensesByMonth = query({
+  args: {
+    yearMonth: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await getViewerTokenIdentifier(ctx)
+    if (!tokenIdentifier) {
+      return null
+    }
+
+    const startDate = `${args.yearMonth}-01`
+    const [year, month] = args.yearMonth.split('-').map(Number)
+    const nextYear = month === 12 ? year + 1 : year
+    const nextMonth = month === 12 ? 1 : month + 1
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
+
+    return await ctx.db
+      .query('expenses')
+      .withIndex('by_user_and_date', (q) =>
+        q
+          .eq('userTokenIdentifier', tokenIdentifier)
+          .gte('date', startDate)
+          .lt('date', endDate),
+      )
+      .order('desc')
+      .take(500)
+  },
+})
+
 export const getPortfolioByIdInternal = internalQuery({
   args: {
     portfolioId: v.id('portfolios'),
