@@ -404,9 +404,15 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                         <TableRow className="hover:bg-transparent">
                           <TableHead>Asset</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">Average price</TableHead>
-                          <TableHead className="text-right">Current price</TableHead>
-                          <TableHead className="text-right">Current value</TableHead>
+                          <TableHead className="text-right">
+                            Average cost ({portfolio.homeCurrency})
+                          </TableHead>
+                          <TableHead className="text-right">
+                            Current price ({holdingsDisplayCurrency})
+                          </TableHead>
+                          <TableHead className="text-right">
+                            Current value ({holdingsDisplayCurrency})
+                          </TableHead>
                           <TableHead className="text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -423,8 +429,8 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                               </TableCell>
                               <TableCell className="text-right tabular-nums">
                                 {formatCurrency(
-                                  holding.avgCostBasis * holdingsDisplayFxRate,
-                                  holdingsDisplayCurrency,
+                                  holding.avgCostBasis,
+                                  portfolio.homeCurrency,
                                 )}
                               </TableCell>
                               <TableCell className="text-right tabular-nums">
@@ -484,16 +490,20 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Average price</p>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                  Average cost ({portfolio.homeCurrency})
+                                </p>
                                 <p className="mt-1 tabular-nums text-foreground">
                                   {formatCurrency(
-                                    holding.avgCostBasis * holdingsDisplayFxRate,
-                                    holdingsDisplayCurrency,
+                                    holding.avgCostBasis,
+                                    portfolio.homeCurrency,
                                   )}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Current price</p>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                  Current price ({holdingsDisplayCurrency})
+                                </p>
                                 <p className="mt-1 tabular-nums text-foreground">
                                   {holding.currentPrice === null
                                     ? '—'
@@ -504,7 +514,9 @@ function DashboardScreen({ portfolio }: { portfolio: Portfolio }) {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Current value</p>
+                                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                                  Current value ({holdingsDisplayCurrency})
+                                </p>
                                 <div className="mt-1 flex items-center gap-2">
                                   <p className="tabular-nums font-medium text-foreground">
                                     {holding.value === null

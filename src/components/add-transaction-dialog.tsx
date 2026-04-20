@@ -1,12 +1,11 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { IconX } from '@tabler/icons-react'
-import { useMutation, useQuery } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { toast } from 'sonner'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
 import {
   defaultUserCurrency,
-  isUserCurrency,
   userCurrencyOptions,
 } from '#/config/currencies'
 import {
@@ -15,6 +14,7 @@ import {
   type AssetAutocompleteOption,
 } from '#/lib/asset-autocomplete'
 import { todayIsoDate } from '#/lib/format'
+import { resolveTransactionFxRate } from '#/lib/transaction-fx'
 import { cn } from '#/lib/utils'
 import { Button } from '#/components/ui/button'
 import {
@@ -40,9 +40,10 @@ function createInitialState(defaultCurrency: string) {
     assetName: '',
     assetType: 'equity' as 'equity' | 'crypto',
     date: todayIsoDate(),
-    nativeCurrency: isUserCurrency(normalizedCurrency)
-      ? normalizedCurrency
-      : defaultUserCurrency,
+    nativeCurrency:
+      /^[A-Z]{3}$/.test(normalizedCurrency)
+        ? normalizedCurrency
+        : defaultUserCurrency,
     pricePerUnit: '',
     quantity: '',
     side: 'buy' as 'buy' | 'sell',
@@ -112,8 +113,7 @@ export default function AddTransactionDialog({
   portfolio,
 }: AddTransactionDialogProps) {
   const addTransaction = useMutation(api.mutations.addTransaction)
-  const userSettings = useQuery(api.queries.getUserSettings, {})
-  const defaultCurrency = userSettings?.currency ?? portfolio.homeCurrency
+  const defaultCurrency = portfolio.homeCurrency
   const [form, setForm] = useState(() => createInitialState(defaultCurrency))
   const [error, setError] = useState<string | null>(null)
   const [highlightedAssetIndex, setHighlightedAssetIndex] = useState(0)
@@ -146,6 +146,14 @@ export default function AddTransactionDialog({
     () => getAssetAutocompleteOptions(deferredTicker),
     [deferredTicker],
   )
+  const transactionCurrencyOptions = useMemo(() => {
+    const currencies = new Set([
+      portfolio.homeCurrency,
+      ...userCurrencyOptions,
+    ])
+
+    return [...currencies]
+  }, [portfolio.homeCurrency])
   const shouldShowAssetMenu =
     isAssetMenuOpen && form.ticker.trim().length > 0
 
@@ -170,13 +178,19 @@ export default function AddTransactionDialog({
     setIsSaving(true)
 
     try {
+      const fxRate = await resolveTransactionFxRate({
+        date: form.date,
+        homeCurrency: portfolio.homeCurrency,
+        nativeCurrency: form.nativeCurrency,
+      })
+
       await addTransaction({
         ...(form.assetName.trim()
           ? { assetName: form.assetName.trim() }
           : {}),
         assetType: form.assetType,
         date: form.date,
-        fxRate: 1,
+        fxRate,
         nativeCurrency: form.nativeCurrency,
         portfolioId: portfolio._id,
         pricePerUnit: Number(form.pricePerUnit),
@@ -398,7 +412,7 @@ export default function AddTransactionDialog({
                   className="h-9"
                 />
               </Field>
-              <Field label="Price per unit">
+            <Field label="Price per unit">
                 <div className="flex">
                   <Input
                     inputMode="decimal"
@@ -428,7 +442,7 @@ export default function AddTransactionDialog({
                       <SelectValue placeholder="Currency" />
                     </SelectTrigger>
                     <SelectContent position="popper" align="end">
-                      {userCurrencyOptions.map((currency) => (
+                      {transactionCurrencyOptions.map((currency) => (
                         <SelectItem key={currency} value={currency}>
                           {currency}
                         </SelectItem>
@@ -436,6 +450,11 @@ export default function AddTransactionDialog({
                     </SelectContent>
                   </Select>
                 </div>
+                {form.nativeCurrency !== portfolio.homeCurrency ? (
+                  <p className="text-[11px] leading-4 text-muted-foreground">
+                    Saved in {portfolio.homeCurrency} using the historical FX rate for {form.date}.
+                  </p>
+                ) : null}
               </Field>
             </div>
 
