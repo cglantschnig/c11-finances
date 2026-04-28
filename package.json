@@ -10,12 +10,17 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "portless",
+    "dev:app": "vite dev",
     "lint": "eslint .",
     "build": "vite build",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview",
     "test": "vitest run"
+  },
+  "portless": {
+    "name": "c11-finances",
+    "script": "dev:app"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.3",
@@ -62,6 +67,7 @@
     "globals": "^17.5.0",
     "jsdom": "^28.1.0",
     "nitro": "3.0.260415-beta",
+    "portless": "^0.11.1",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.0",
